@@ -2,6 +2,29 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+
+#define relay1 2
+#define relay2 4
+#define relay3 12
+#define relay4 5
+#define relay5 16 
+#define relay6 17
+#define relay7 18
+#define relay8 19
+#define relay9 14
+#define relay10 15
+#define relay11 23
+#define relay12 25
+#define relay13 26
+#define relay14 27
+#define relay15 32
+#define relay16 33
+
+
+#define slavesNumber 1
+#define debug true
+void switchRelayTo(int relayNumber, bool state);
+
 // Structure for packet variables saving
 struct packetData{
   int id;
@@ -11,6 +34,7 @@ struct packetData{
   float groundHum;
   float lightLevel;
 };
+
 
 void parsePackage(packetData&, String);
 void showPackage(packetData);
@@ -22,18 +46,32 @@ void setup() {
 }
 
 void loop() {
-  Wire.requestFrom(1, 28);    // request 6 bytes from slave device #8
-  String arrivedData = "";
-  packetData data1;
-  while (Wire.available() > 0) { // slave may send less than requested
-    char c = Wire.read(); // receive a byte as character
-    arrivedData += c;   // Add symbol to arrivedData string for furute work
-    Serial.print(c);         // print the character
-  }
-  Serial.println();
-  parsePackage(data1, arrivedData);
-  showPackage(data1);
+  // Wire.requestFrom(1, 28);    // request 6 bytes from slave device #8
+  // String arrivedData = "";
+  // packetData data1;
+  // while (Wire.available() > 0) { // slave may send less than requested
+    // char c = Wire.read(); // receive a byte as character
+  //   arrivedData += c;   // Add symbol to arrivedData string for furute work
+  //   Serial.print(c);         // print the character
+  // }
+  // Serial.println();
+  // parsePackage(data1, arrivedData);
+  // showPackage(data1);
   //Serial.println("Attempt to read data");
+  packetData data[slavesNumber];
+  
+  for(int i = 1; i <= slavesNumber; i++){
+    Wire.requestFrom(i, 28);
+    String arrivedData = "";
+    // packetData data;
+    while (Wire.available() > 0){
+      char c = Wire.read();
+      arrivedData += c;
+      if(debug) Serial.print(c);
+    }
+    parsePackage(data[i], arrivedData);
+    showPackage(data[i]);
+  }
   delay(1000);
 }
 
@@ -102,4 +140,12 @@ void showPackage(packetData p1){
   Serial.println("Ground humidity    : " + String(p1.groundHum));
   Serial.println("Light level        : " + String(p1.lightLevel));
   Serial.println("/---------------------------------/");
+}
+
+
+void switchRelayTo(int relayNumber, bool state){
+  if (state)
+    digitalWrite(relayNumber, HIGH);
+  else
+    digitalWrite(relayNumber, LOW);
 }

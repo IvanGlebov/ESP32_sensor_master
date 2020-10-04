@@ -23,6 +23,10 @@
 
 #define slavesNumber 1
 #define debug true
+
+
+
+
 void switchRelayTo(int relayNumber, bool state);
 
 // Structure for packet variables saving
@@ -35,29 +39,151 @@ struct packetData{
   float lightLevel;
 };
 
+struct perfRelays{
+  int lightRealay;
+  int pumpRelay;
+  int ventRelay;
+};
+
+struct perfData{
+  bool lightRelay;
+  bool pumpRealy;
+  bool ventRealy;
+  int mode;
+};
+
+struct borderValues{
+  float lowGroundHum;
+  float highGroundHum;
+  float lowGroundTemp;
+  float highGroundTemp;
+  float lowAirHum;
+  float highAirHum;
+  float lowAirTemp;
+  float highAirTemp;
+  float lowLightLevel;
+  float highLightLevel;
+};
+
+void dropBorders(borderValues &b1){
+  b1.highAirHum = 80;
+  b1.highAirTemp = 40;
+  b1.highGroundHum = 90;
+  b1.highGroundTemp = 30;
+  b1.highLightLevel = 5000;
+  b1.lowAirHum = 20;
+  b1.lowAirTemp = 10;
+  b1.lowGroundHum = 20;
+  b1.lowGroundTemp = 12;
+  b1.lowLightLevel = 200;
+}
+
+
+class workObj{
+  private:
+    enum modes {automatic, manual, timeControlled};
+    perfRelays relays;
+    perfData perfData1;
+    packetData sensors;
+    borderValues borders;
+  public:
+    workObj(int startMode, bool setAllDefaultFlag){
+      dropBorders(borders);
+      perfData1.mode = startMode;
+      if (setAllDefaultFlag == true){
+        perfData1.lightRelay = false;
+        perfData1.pumpRealy = false;
+        perfData1.ventRealy = false;
+      }
+
+    }
+    void setRelays(int lightRelayPin, int pumpRelayPin, int ventRelayPin){
+      relays.lightRealay = lightRelayPin;
+      relays.pumpRelay = pumpRelayPin;
+      relays.ventRelay = ventRelayPin;
+    }
+    void setSensorsData(packetData d1) { sensors = d1; }
+    void setBorder(String border, float value){
+      if (border == "lowGroundHum"){
+        borders.lowGroundHum = value;
+      } else if (border == "highGroundHum"){
+        borders.highGroundHum = value;
+      } else if (border == "lowGroundTemp"){
+        borders.lowGroundTemp = value;
+      } else if (border == "highGroundTemp"){
+        borders.highGroundTemp = value;
+      } else if (border == "lowAirHum"){
+        borders.lowAirHum = value;
+      } else if (border == "highAirHum"){
+        borders.highAirHum = value;
+      } else if (border == "lowAirTemp"){
+        borders.lowAirTemp = value;
+      } else if (border == "highAirTemp"){
+        borders.highAirTemp = value;
+      } else if (border == "lowLightLevel"){
+        borders.lowLightLevel = value;
+      } else if (border == "highLightLevel"){
+        borders.highLightLevel = value;
+      }
+    }
+    void setAllBorders(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
+                    float highGroundTemp, float lowAirHum, float highAirHum, 
+                    float lowAirTemp, float highAirTemp, float lowLightLevel, 
+                    float highLightLevel)
+    {
+      borders.lowGroundHum = lowGroundHum;
+      borders.highGroundHum = highGroundHum;
+      borders.lowGroundTemp = lowGroundTemp;
+      borders.highGroundTemp = highGroundTemp;
+      borders.lowAirHum = lowAirHum;
+      borders.highAirHum = highAirHum;
+      borders.lowAirTemp = lowAirTemp;
+      borders.highAirTemp = highAirTemp;
+      borders.lowLightLevel = lowLightLevel;
+      borders.highLightLevel = highLightLevel;
+    }
+    bool autoGroundHum(){
+      // Watering
+      if (sensors.groundHum < borders.lowGroundHum){
+        perfData1.pumpRealy = true;
+      }
+      if (sensors.groundHum > borders.highGroundHum){
+        perfData1.pumpRealy = false;
+      }
+      return 0; // Left for errors
+    }
+    bool autoLight(){
+      if (sensors.lightLevel < borders.lowLightLevel && perfData1.lightRelay == false){
+        perfData1.lightRelay = true;
+      }
+      if (sensors.lightLevel > borders.highLightLevel && perfData1.lightRelay == true){
+        perfData1.lightRelay = false;
+      }
+      return 0; // Left for errors
+    }
+    bool autoVent(){
+        
+    }
+
+
+
+};
 
 void parsePackage(packetData&, String);
 void showPackage(packetData);
 
 
+workObj obj1;
+
 void setup() {
   Wire.begin();        // join i2c bus (address optional for master)
   Serial.begin(115200);  // start serial for output
+  obj1.setRelays(relay1, relay2, relay3);
 }
 
 void loop() {
-  // Wire.requestFrom(1, 28);    // request 6 bytes from slave device #8
-  // String arrivedData = "";
-  // packetData data1;
-  // while (Wire.available() > 0) { // slave may send less than requested
-    // char c = Wire.read(); // receive a byte as character
-  //   arrivedData += c;   // Add symbol to arrivedData string for furute work
-  //   Serial.print(c);         // print the character
-  // }
-  // Serial.println();
-  // parsePackage(data1, arrivedData);
-  // showPackage(data1);
-  //Serial.println("Attempt to read data");
+  
+
   packetData data[slavesNumber];
   
   for(int i = 1; i <= slavesNumber; i++){

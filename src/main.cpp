@@ -1,6 +1,16 @@
 // MASTER
 #include <Arduino.h>
 #include <Wire.h>
+#include <EEPROM.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#define BLYNK_PRINT Serial
+
+char auth[] = "YourAuthToken";
+char ssid[] = "YourNetworkName";
+char pass[] = "YourPassword";
+
 
 
 #define relay1 2
@@ -40,15 +50,13 @@ struct packetData{
 };
 
 struct perfRelays{
-  int lightRealay;
-  int pumpRelay;
-  int ventRelay;
+  bool r1, r2, r3, r4;
 };
 
 struct perfData{
-  bool lightRelay;
-  bool pumpRealy;
-  bool ventRealy;
+  // bool lightRelay;
+  // bool pumpRealy;
+  // bool ventRealy;
   int mode;
 };
 
@@ -81,28 +89,62 @@ void dropBorders(borderValues &b1){
 
 class workObj{
   private:
-    enum modes {automatic, manual, timeControlled};
-    perfRelays relays;
-    perfData perfData1;
+    enum modes {automatic, manual, timeControlled, alert};
+    perfRelays relays1, relays2;
+    int mode;
+    // perfData perfData1;
     packetData sensors;
     borderValues borders;
   public:
+    // If setAllDefaultFlag is false - border values will be recovered from EEPROM
+    // Modes - automatic(0), manual(1), timeConrolled(2), alert(3)
     workObj(int startMode, bool setAllDefaultFlag){
-      dropBorders(borders);
-      perfData1.mode = startMode;
-      if (setAllDefaultFlag == true){
-        perfData1.lightRelay = false;
-        perfData1.pumpRealy = false;
-        perfData1.ventRealy = false;
+      mode = startMode;
+      if(setAllDefaultFlag == true)
+      {
+        dropBorders(borders);
+      } else
+      {
+        restoreBordersFromEEPROM();  
       }
+      
+      
+      // perfData1.mode = startMode;
+      // if (setAllDefaultFlag == true){
+        // perfData1.lightRelay = false;
+        // perfData1.pumpRealy = false;
+        // perfData1.ventRealy = false;
+      // }
 
     }
-    void setRelays(int lightRelayPin, int pumpRelayPin, int ventRelayPin){
-      relays.lightRealay = lightRelayPin;
-      relays.pumpRelay = pumpRelayPin;
-      relays.ventRelay = ventRelayPin;
+    
+    void initRelays1(int r1, int r2, int r3, int r4){
+      relays1.r1 = r1;
+      relays1.r2 = r2;
+      relays1.r3 = r3;
+      relays1.r4 = r4;
     }
-    void setSensorsData(packetData d1) { sensors = d1; }
+    
+    void initRelays2(int r1, int r2, int r3, int r4){
+      relays2.r1 = r1;
+      relays2.r2 = r2;
+      relays2.r3 = r3;
+      relays2.r4 = r4;
+    }
+    
+    void setSensorsData(packetData d1, int n) { 
+      /*switch(n){
+        case 1:
+          sensors1 = d1; 
+          break;
+        case 2:
+          sensors2 = d1;
+          break;
+      }*/
+      sensors = d1;
+      
+    }
+    
     void setBorder(String border, float value){
       if (border == "lowGroundHum"){
         borders.lowGroundHum = value;
@@ -126,6 +168,7 @@ class workObj{
         borders.highLightLevel = value;
       }
     }
+    
     void setAllBorders(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
                     float highGroundTemp, float lowAirHum, float highAirHum, 
                     float lowAirTemp, float highAirTemp, float lowLightLevel, 
@@ -142,6 +185,7 @@ class workObj{
       borders.lowLightLevel = lowLightLevel;
       borders.highLightLevel = highLightLevel;
     }
+    
     bool autoGroundHum(){
       // Watering
       if (sensors.groundHum < borders.lowGroundHum){
@@ -152,6 +196,7 @@ class workObj{
       }
       return 0; // Left for errors
     }
+    
     bool autoLight(){
       if (sensors.lightLevel < borders.lowLightLevel && perfData1.lightRelay == false){
         perfData1.lightRelay = true;
@@ -161,31 +206,75 @@ class workObj{
       }
       return 0; // Left for errors
     }
+    
     bool autoVent(){
-        
+
     }
 
+    void saveBordersToEEPROM(){
+      EEPROM.write(0, borders.lowGroundHum);
+      EEPROM.write(1, borders.highGroundHum);
+      EEPROM.write(2, borders.lowGroundTemp);
+      EEPROM.write(3, borders.highGroundTemp);
+      EEPROM.write(4, borders.lowAirHum);
+      EEPROM.write(5, borders.highAirHum);
+      EEPROM.write(6, borders.lowAirTemp);
+      EEPROM.write(7, borders.highAirTemp);
+      EEPROM.write(8, borders.lowLightLevel);
+      EEPROM.write(9, borders.highLightLevel);
+    }
 
+    void restoreBordersFromEEPROM(){
+      borders.lowGroundHum = EEPROM.read(0);
+      borders.highGroundHum = EEPROM.read(1);
+      borders.lowGroundTemp = EEPROM.read(2);
+      borders.highGroundTemp = EEPROM.read(3);
+      borders.lowAirHum = EEPROM.read(4);
+      borders.highAirHum = EEPROM.read(5);
+      borders.lowAirTemp = EEPROM.read(6);
+      borders.highAirTemp = EEPROM.read(7);
+      borders.lowLightLevel = EEPROM.read(8);
+      borders.highLightLevel = EEPROM.read(9);
+    }
+
+    void changeModeTo(int mode)
+    {
+
+    }
 
 };
 
 void parsePackage(packetData&, String);
 void showPackage(packetData);
 
+// BlynkTimer sensorsQuerry;
+void slavesQuery();
 
-workObj obj1;
+workObj obj1(0, true);
 
 void setup() {
   Wire.begin();        // join i2c bus (address optional for master)
   Serial.begin(115200);  // start serial for output
-  obj1.setRelays(relay1, relay2, relay3);
+  // obj1.initRelays(relay1, relay2, relay3);
+
+  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,100), 8080);
+  packetData data[slavesNumber]; 
+  // sensorsQuerry.setInterval(2000L, slavesQuery(data));
 }
 
 void loop() {
   
+  // sensorsQuerry.run();
+  Blynk.run();
 
-  packetData data[slavesNumber];
   
+  
+  
+  delay(1000);
+}
+
+
+void slavesQuery(packetData* data[]){
   for(int i = 1; i <= slavesNumber; i++){
     Wire.requestFrom(i, 28);
     String arrivedData = "";
@@ -195,12 +284,10 @@ void loop() {
       arrivedData += c;
       if(debug) Serial.print(c);
     }
-    parsePackage(data[i], arrivedData);
-    showPackage(data[i]);
+    parsePackage(*(data[i]), arrivedData);
+    showPackage(*(data[i]));
   }
-  delay(1000);
 }
-
 void parsePackage(packetData& d1, String arrData){
   String temp = "";
   
@@ -257,6 +344,7 @@ void parsePackage(packetData& d1, String arrData){
   tempChar[1] = arrData[27];
   d1.lightLevel += atof(tempChar)/100;
 }
+
 void showPackage(packetData p1){
   Serial.println("/-----------PACKAGE-DATA-----------");
   Serial.println("ID of sender       : " + String(p1.id));
@@ -269,9 +357,3 @@ void showPackage(packetData p1){
 }
 
 
-void switchRelayTo(int relayNumber, bool state){
-  if (state)
-    digitalWrite(relayNumber, HIGH);
-  else
-    digitalWrite(relayNumber, LOW);
-}

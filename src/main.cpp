@@ -34,9 +34,42 @@ char pass[] = "YourPassword";
 #define slavesNumber 1
 #define debug true
 
+enum modes {automatic, manual, timeControlled, alert};
+
+/* virtual pins mapping
+V0 - mode
+V10 - relay1 control 
+^
+|
+V26 - relay16 control
 
 
 
+*/
+
+// Функиця для получения режима от Blynk
+BLYNK_WRITE(V1)
+{
+  int a = param.asInt();
+  // Если всё в штатном режиме, то меняем режим по указу Blynk
+  if (obj1.getMode() != alert)
+    obj1.changeModeTo(a);
+};
+
+// Реле 1. Можно управлять с Blynk только в режиме manual
+BLYNK_WRITE(V10)
+{
+  int a = param.asInt();
+  if (obj1.getMode() == manual)
+    obj1.pump04_1.setState( (a == 0)? true : false);
+}
+
+
+
+
+
+
+// Прототип функции 
 void switchRelayTo(int relayNumber, bool state);
 
 // Structure for packet variables saving
@@ -49,17 +82,10 @@ struct packetData{
   float lightLevel;
 };
 
-struct perfRelays{
-  bool r1, r2, r3, r4;
-};
+// Структура для хранения пинов к которым подключены реле
 
-struct perfData{
-  // bool lightRelay;
-  // bool pumpRealy;
-  // bool ventRealy;
-  int mode;
-};
 
+// Структура для хранения граничных значений для блоков сенсоров и автоматики
 struct borderValues{
   float lowGroundHum;
   float highGroundHum;
@@ -72,7 +98,7 @@ struct borderValues{
   float lowLightLevel;
   float highLightLevel;
 };
-
+// Функция для сброса значений границ определённой структуры к стандартным(предустановленным)
 void dropBorders(borderValues &b1){
   b1.highAirHum = 80;
   b1.highAirTemp = 40;
@@ -86,20 +112,54 @@ void dropBorders(borderValues &b1){
   b1.lowLightLevel = 200;
 }
 
+// Класс описывающий одно конкретное реле
+class relay{
+  private:
+    int pin;
+    String name;
+    bool state;
+  public:
+    relay(int bindpin, String relayName) : pin(bindpin), name(relayName) {};
+    relay(int bindPin, String relayName, bool defaultState) : pin(bindPin), name(relayName), state(defaultState) {};
+    void setBindpin(int bindPin){ pin = bindPin; }
+    void setState(bool newState){ state  = newState; }
+    void printInfo(){ Serial.println("Relay with name " + name + " on pin " + String(pin) + " is " + (state)? String(true) : String(false)); }
+    void on(){ state = true; }
+    void off(){ state = false; }
+};
+
 
 class workObj{
   private:
-    enum modes {automatic, manual, timeControlled, alert};
-    perfRelays relays1, relays2;
     int mode;
-    // perfData perfData1;
-    packetData sensors;
+
+    packetData sensors1, sensors2, sensors3;
     borderValues borders;
   public:
+
+
+    // Пины реле со старта объявленыы в начале кода
+    // Реле для каждого исполнителя
+    relay pump04_1 = relay(relay1, "Pump0.4KVt-1");
+    relay pump04_2 = relay(relay2, "Pump0.4KVt-2");
+    relay pump04_3 = relay(relay3, "Pump0.4KVt-3");
+    relay valve1 = relay(relay4, "Valve-1");
+    relay valve2 = relay(relay5, "Valve-2");
+    relay light3 = relay(relay6, "Light3KVt");
+    relay light1_1 = relay(relay7, "Light1KVt");
+    relay light1_2 = relay(relay8, "Light1KVt");
+    relay light01_1 = relay(relay9, "Light0.1KVt-1");
+    relay light01_2 = relay(relay10, "Light0.1KVt-2");
+    relay destr1_1 = relay(relay11, "Destr1KVt-1");
+    relay destr1_2 = relay(relay12, "Destr1KVt-2");
+    relay siod1 = relay(relay13, "SIOD1KVt");
+
+
+
     // If setAllDefaultFlag is false - border values will be recovered from EEPROM
     // Modes - automatic(0), manual(1), timeConrolled(2), alert(3)
-    workObj(int startMode, bool setAllDefaultFlag){
-      mode = startMode;
+    workObj(int startMode, bool setAllDefaultFlag) : mode(startMode) {
+      // mode = startMode;
       if(setAllDefaultFlag == true)
       {
         dropBorders(borders);
@@ -107,44 +167,30 @@ class workObj{
       {
         restoreBordersFromEEPROM();  
       }
-      
-      
-      // perfData1.mode = startMode;
-      // if (setAllDefaultFlag == true){
-        // perfData1.lightRelay = false;
-        // perfData1.pumpRealy = false;
-        // perfData1.ventRealy = false;
-      // }
+
 
     }
-    
-    void initRelays1(int r1, int r2, int r3, int r4){
-      relays1.r1 = r1;
-      relays1.r2 = r2;
-      relays1.r3 = r3;
-      relays1.r4 = r4;
-    }
-    
-    void initRelays2(int r1, int r2, int r3, int r4){
-      relays2.r1 = r1;
-      relays2.r2 = r2;
-      relays2.r3 = r3;
-      relays2.r4 = r4;
-    }
-    
+
+
+    // Функция для записи данных с сенсоров
     void setSensorsData(packetData d1, int n) { 
-      /*switch(n){
+      switch(n){
         case 1:
           sensors1 = d1; 
           break;
         case 2:
           sensors2 = d1;
           break;
-      }*/
-      sensors = d1;
+        case 3:
+          sensors3 = d1;
+          break;
+        default:
+          Serial.println("Error writting data to sensors struct");
+      }
+      // sensors = d1;
       
     }
-    
+    // Функция для установки конкретной границы и её значения
     void setBorder(String border, float value){
       if (border == "lowGroundHum"){
         borders.lowGroundHum = value;
@@ -168,7 +214,7 @@ class workObj{
         borders.highLightLevel = value;
       }
     }
-    
+    // Функция для установки всех значений границ разом
     void setAllBorders(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
                     float highGroundTemp, float lowAirHum, float highAirHum, 
                     float lowAirTemp, float highAirTemp, float lowLightLevel, 
@@ -186,31 +232,52 @@ class workObj{
       borders.highLightLevel = highLightLevel;
     }
     
-    bool autoGroundHum(){
+    // Функция для автоматического полива по границам для каждого блока сенсоров
+    bool autoGroundHum(int sensorBlocknumber){
       // Watering
-      if (sensors.groundHum < borders.lowGroundHum){
-        perfData1.pumpRealy = true;
+      // 
+      if (sensorBlocknumber == 1){
+        if (sensors1.groundHum < borders.lowGroundHum){
+          pump04_1.on();
+        }
+        if (sensors1.groundHum > borders.highGroundHum){
+          pump04_2.off();
+        }
       }
-      if (sensors.groundHum > borders.highGroundHum){
-        perfData1.pumpRealy = false;
+      
+      if (sensorBlocknumber == 2){
+        if (sensors2.groundHum < borders.lowGroundHum){
+          pump04_2.on();
+        }
+        if (sensors1.groundHum > borders.highGroundHum){
+          pump04_2.off();
+        }
       }
+
+      if (sensorBlocknumber == 3){
+        if (sensors3.groundHum < borders.lowGroundHum){
+          pump04_3.on();
+        }
+        if (sensors1.groundHum > borders.highGroundHum){
+          pump04_3.off();
+        }
+      }
+
       return 0; // Left for errors
     }
     
+
+    // TODO - допиать autoLight() спросив что она должна делать
+
+    // Функция для автоматического включения света 
     bool autoLight(){
-      if (sensors.lightLevel < borders.lowLightLevel && perfData1.lightRelay == false){
-        perfData1.lightRelay = true;
-      }
-      if (sensors.lightLevel > borders.highLightLevel && perfData1.lightRelay == true){
-        perfData1.lightRelay = false;
-      }
       return 0; // Left for errors
     }
     
     bool autoVent(){
 
     }
-
+    // Функция для сохранения всех значений границ в энергонезависимую память
     void saveBordersToEEPROM(){
       EEPROM.write(0, borders.lowGroundHum);
       EEPROM.write(1, borders.highGroundHum);
@@ -223,7 +290,7 @@ class workObj{
       EEPROM.write(8, borders.lowLightLevel);
       EEPROM.write(9, borders.highLightLevel);
     }
-
+    // Функция для чтения всех значений границ из энергонезависимой памяти
     void restoreBordersFromEEPROM(){
       borders.lowGroundHum = EEPROM.read(0);
       borders.highGroundHum = EEPROM.read(1);
@@ -236,18 +303,21 @@ class workObj{
       borders.lowLightLevel = EEPROM.read(8);
       borders.highLightLevel = EEPROM.read(9);
     }
-
-    void changeModeTo(int mode)
+    // Функция для смены режима финкционирования
+    void changeModeTo(int changeToMode)
     {
-
+      mode = changeToMode;
     }
 
-};
 
+    int getMode(){ return mode; }
+};
+// Прототип функции разбора пакета данных с блока сенсоров
 void parsePackage(packetData&, String);
+// Прототип функции отображения данных пакета в консоль
 void showPackage(packetData);
 
-// BlynkTimer sensorsQuerry;
+// Зачаток функции для опроса всех блоков сенсоров разом
 void slavesQuery();
 
 workObj obj1(0, true);
@@ -273,7 +343,8 @@ void loop() {
   delay(1000);
 }
 
-
+// Функция для опроса всех блоков сенсоров разом
+// TODO - переделать тк сложно будет наладить обмен данныим между функцией и классом
 void slavesQuery(packetData* data[]){
   for(int i = 1; i <= slavesNumber; i++){
     Wire.requestFrom(i, 28);
@@ -288,6 +359,7 @@ void slavesQuery(packetData* data[]){
     showPackage(*(data[i]));
   }
 }
+// Функция для разбора пакета данных с блока сенсоров
 void parsePackage(packetData& d1, String arrData){
   String temp = "";
   
@@ -344,7 +416,7 @@ void parsePackage(packetData& d1, String arrData){
   tempChar[1] = arrData[27];
   d1.lightLevel += atof(tempChar)/100;
 }
-
+// Функция для отображения данных пакета в консоль
 void showPackage(packetData p1){
   Serial.println("/-----------PACKAGE-DATA-----------");
   Serial.println("ID of sender       : " + String(p1.id));

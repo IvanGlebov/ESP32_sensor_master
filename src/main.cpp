@@ -1,16 +1,21 @@
 // MASTER
 #include <Arduino.h>
-#include <Wire.h>
-#include <EEPROM.h>
-#include "PCF8574.h"
+
+#define BLYNK_PRINT Serial
+
+
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
-#define BLYNK_PRINT Serial
-
+#include <Wire.h>
+#include <EEPROM.h>
+#include "PCF8574.h"
+// home
+// Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84
+// rwuSDq5orOfSV8nF75xsQT7YSR_e2Xqf
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
-char ssid[] = "Keenetic-4926";
-char pass[] = "Q4WmFQTa";
+char ssid[] = "Keenetic-4926"; // Keenetic-4926
+char pass[] = "Q4WmFQTa"; // Q4WmFQTa
 
 PCF8574 pcf_1(0x20);
 PCF8574 pcf_2(0x21);
@@ -19,17 +24,14 @@ PCF8574 pcf_2(0x21);
 #define debug true
 
 enum modes {automatic, manual, timeControlled, alert};
-BlynkTimer relaysUsing;
-bool setFlag = false;
+// bool setFlag = false;
+
 /* virtual pins mapping
 V0 - mode
 V10 - relay1 control 
 ^
 |
 V25 - relay16 control
-
-
-
 */
 
 
@@ -76,6 +78,7 @@ void dropBorders(borderValues &b1){
   b1.lowLightLevel = 200;
 }
 
+
 // Класс описывающий одно конкретное реле
 class relay{
   private:
@@ -94,11 +97,27 @@ class relay{
     bool returnState(){ return state; }
 };
 
-void changeRelays(){}
+relay pump04_1 = relay(1, "Pump0.4Kv-1");
+relay pump04_2 = relay(2, "Pump0.4Kv-2");
+relay pump04_3 = relay(3, "Pump0.4Kv-3");
+relay valve_1 = relay(4, "Valve-1");
+relay valve_2 = relay(5, "Valve-2");
+relay light3_1 = relay(6, "Light3Kv-1");
+relay light1_1 = relay(7, "Light1Kv-1");
+relay light1_2 = relay(8, "Light1Kv-2");
+relay light01_1 = relay(9, "Light0.1KV-1");
+relay light01_2 = relay(10, "Light0.1Kv-2");
+relay distrif1_1 = relay(11, "Distrificator1Kv-1");
+relay distrif1_2 = relay(12, "Distrificator1Kv-1");
+relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1");
+relay siod1_1 = relay(14, "SIOD1Kv");
+
+
+// void changeRelays(){}
 // Функция для применения значений реле
 void setRelay(relay r1);
 void callRelays();
-void setFlagTrue();
+// void setFlagTrue();
 // void switchRelayTo(int relayNumber, bool state);
 
 class workObj{
@@ -106,23 +125,10 @@ class workObj{
     int mode;
 
     packetData sensors1, sensors2, sensors3;
-    borderValues borders;
+    borderValues borders[2];
   public:
 
-    relay pump04_1 = relay(1, "Pump0.4Kv-1");
-    relay pump04_2 = relay(2, "Pump0.4Kv-2");
-    relay pump04_3 = relay(3, "Pump0.4Kv-3");
-    relay valve_1 = relay(4, "Valve-1");
-    relay valve_2 = relay(5, "Valve-2");
-    relay light3_1 = relay(6, "Light3Kv-1");
-    relay light1_1 = relay(7, "Light1Kv-1");
-    relay light1_2 = relay(8, "Light1Kv-2");
-    relay light01_1 = relay(9, "Light0.1KV-1");
-    relay light01_2 = relay(10, "Light0.1Kv-2");
-    relay distrif1_1 = relay(11, "Distrificator1Kv-1");
-    relay distrif1_2 = relay(12, "Distrificator1Kv-1");
-    relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1");
-    relay siod1_1 = relay(14, "SIOD1Kv");
+    
 
 
     // If setAllDefaultFlag is false - border values will be recovered from EEPROM
@@ -131,10 +137,12 @@ class workObj{
       // mode = startMode;
       if(setAllDefaultFlag == true)
       {
-        dropBorders(borders);
+        dropBorders(borders[1]);
+        dropBorders(borders[2]);
       } else
       {
-        restoreBordersFromEEPROM();  
+        restoreBordersFromEEPROM(1);  
+        restoreBordersFromEEPROM(2);
       }
 
 
@@ -160,49 +168,64 @@ class workObj{
       
     }
     // Функция для установки конкретной границы и её значения
-    void setBorder(String border, float value){
+    /* Ключи для значений
+    - lowGroundHum
+    - highGroundHum
+    - lowGroundTemp
+    - highGroundTemp
+    - lowAirHum
+    - highAirHum
+    - lowAirTemp
+    - highAirTemp
+    - lowLightLevel
+    - highLightLevel
+
+    */
+    void setBorder(String border, float value, int bordersGroup){
+      
       if (border == "lowGroundHum"){
-        borders.lowGroundHum = value;
+        borders[bordersGroup].lowGroundHum = value;
       } else if (border == "highGroundHum"){
-        borders.highGroundHum = value;
+        borders[bordersGroup].highGroundHum = value;
       } else if (border == "lowGroundTemp"){
-        borders.lowGroundTemp = value;
+        borders[bordersGroup].lowGroundTemp = value;
       } else if (border == "highGroundTemp"){
-        borders.highGroundTemp = value;
+        borders[bordersGroup].highGroundTemp = value;
       } else if (border == "lowAirHum"){
-        borders.lowAirHum = value;
+        borders[bordersGroup].lowAirHum = value;
       } else if (border == "highAirHum"){
-        borders.highAirHum = value;
+        borders[bordersGroup].highAirHum = value;
       } else if (border == "lowAirTemp"){
-        borders.lowAirTemp = value;
+        borders[bordersGroup].lowAirTemp = value;
       } else if (border == "highAirTemp"){
-        borders.highAirTemp = value;
+        borders[bordersGroup].highAirTemp = value;
       } else if (border == "lowLightLevel"){
-        borders.lowLightLevel = value;
+        borders[bordersGroup].lowLightLevel = value;
       } else if (border == "highLightLevel"){
-        borders.highLightLevel = value;
+        borders[bordersGroup].highLightLevel = value;
       }
+
     }
     // Функция для установки всех значений границ разом
-    void setAllBorders(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
-                    float highGroundTemp, float lowAirHum, float highAirHum, 
-                    float lowAirTemp, float highAirTemp, float lowLightLevel, 
-                    float highLightLevel)
+    void setAllBordersGroup(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
+                       float highGroundTemp, float lowAirHum, float highAirHum, 
+                       float lowAirTemp, float highAirTemp, float lowLightLevel, 
+                       float highLightLevel, int bordersGroup)
     {
-      borders.lowGroundHum = lowGroundHum;
-      borders.highGroundHum = highGroundHum;
-      borders.lowGroundTemp = lowGroundTemp;
-      borders.highGroundTemp = highGroundTemp;
-      borders.lowAirHum = lowAirHum;
-      borders.highAirHum = highAirHum;
-      borders.lowAirTemp = lowAirTemp;
-      borders.highAirTemp = highAirTemp;
-      borders.lowLightLevel = lowLightLevel;
-      borders.highLightLevel = highLightLevel;
+    
+      borders[bordersGroup].lowGroundHum = lowGroundHum;
+      borders[bordersGroup].highGroundHum = highGroundHum;
+      borders[bordersGroup].lowGroundTemp = lowGroundTemp;
+      borders[bordersGroup].highGroundTemp = highGroundTemp;
+      borders[bordersGroup].lowAirHum = lowAirHum;
+      borders[bordersGroup].highAirHum = highAirHum;
+      borders[bordersGroup].lowAirTemp = lowAirTemp;
+      borders[bordersGroup].highAirTemp = highAirTemp;
+      borders[bordersGroup].lowLightLevel = lowLightLevel;
+      borders[bordersGroup].highLightLevel = highLightLevel;
+
     }
     
-    
-
 
     void useRelays() const {
       // Relays are working in inverted mode - 0 is ON, 1 is OFF
@@ -227,6 +250,7 @@ class workObj{
     bool autoGroundHum(int sensorBlocknumber){
       // Watering
       // 
+      /*
       if (sensorBlocknumber == 1){
         if (sensors1.groundHum < borders.lowGroundHum){
           pump04_1.on();
@@ -252,7 +276,7 @@ class workObj{
         if (sensors1.groundHum > borders.highGroundHum){
           pump04_3.off();
         }
-      }
+      }*/
 
       return 0; // Left for errors
     }
@@ -269,30 +293,31 @@ class workObj{
 
     }
     // Функция для сохранения всех значений границ в энергонезависимую память
-    void saveBordersToEEPROM(){
-      EEPROM.write(0, borders.lowGroundHum);
-      EEPROM.write(1, borders.highGroundHum);
-      EEPROM.write(2, borders.lowGroundTemp);
-      EEPROM.write(3, borders.highGroundTemp);
-      EEPROM.write(4, borders.lowAirHum);
-      EEPROM.write(5, borders.highAirHum);
-      EEPROM.write(6, borders.lowAirTemp);
-      EEPROM.write(7, borders.highAirTemp);
-      EEPROM.write(8, borders.lowLightLevel);
-      EEPROM.write(9, borders.highLightLevel);
+    void saveBordersToEEPROM(int bordersGroup){
+      EEPROM.write(0 + bordersGroup, borders[bordersGroup].lowGroundHum);
+      EEPROM.write(1 + bordersGroup, borders[bordersGroup].highGroundHum);
+      EEPROM.write(2 + bordersGroup, borders[bordersGroup].lowGroundTemp);
+      EEPROM.write(3 + bordersGroup, borders[bordersGroup].highGroundTemp);
+      EEPROM.write(4 + bordersGroup, borders[bordersGroup].lowAirHum);
+      EEPROM.write(5 + bordersGroup, borders[bordersGroup].highAirHum);
+      EEPROM.write(6 + bordersGroup, borders[bordersGroup].lowAirTemp);
+      EEPROM.write(7 + bordersGroup, borders[bordersGroup].highAirTemp);
+      EEPROM.write(8 + bordersGroup, borders[bordersGroup].lowLightLevel);
+      EEPROM.write(9 + bordersGroup, borders[bordersGroup].highLightLevel);
+      EEPROM.commit();
     }
     // Функция для чтения всех значений границ из энергонезависимой памяти
-    void restoreBordersFromEEPROM(){
-      borders.lowGroundHum = EEPROM.read(0);
-      borders.highGroundHum = EEPROM.read(1);
-      borders.lowGroundTemp = EEPROM.read(2);
-      borders.highGroundTemp = EEPROM.read(3);
-      borders.lowAirHum = EEPROM.read(4);
-      borders.highAirHum = EEPROM.read(5);
-      borders.lowAirTemp = EEPROM.read(6);
-      borders.highAirTemp = EEPROM.read(7);
-      borders.lowLightLevel = EEPROM.read(8);
-      borders.highLightLevel = EEPROM.read(9);
+    void restoreBordersFromEEPROM(int bordersGroup){
+      borders[bordersGroup].lowGroundHum = (EEPROM.read(0 + bordersGroup) == 255) ? 0 : EEPROM.read(0 + bordersGroup);
+      borders[bordersGroup].highGroundHum = (EEPROM.read(1 + bordersGroup) == 255) ? 0 : EEPROM.read(1 + bordersGroup);
+      borders[bordersGroup].lowGroundTemp = (EEPROM.read(2 + bordersGroup) == 255) ? 0 : EEPROM.read(2 + bordersGroup);
+      borders[bordersGroup].highGroundTemp = (EEPROM.read(3 + bordersGroup) == 255) ? 0 : EEPROM.read(3 + bordersGroup);
+      borders[bordersGroup].lowAirHum = (EEPROM.read(4 + bordersGroup) == 255) ? 0 : EEPROM.read(4 + bordersGroup);
+      borders[bordersGroup].highAirHum = (EEPROM.read(5 + bordersGroup) == 255) ? 0 : EEPROM.read(5 + bordersGroup);
+      borders[bordersGroup].lowAirTemp = (EEPROM.read(6 + bordersGroup) == 255) ? 0 : EEPROM.read(6 + bordersGroup);
+      borders[bordersGroup].highAirTemp = (EEPROM.read(7 + bordersGroup) == 255) ? 0 : EEPROM.read(7 + bordersGroup);
+      borders[bordersGroup].lowLightLevel = (EEPROM.read(8 + bordersGroup) == 255) ? 0 : EEPROM.read(8 + bordersGroup);
+      borders[bordersGroup].highLightLevel = (EEPROM.read(9 + bordersGroup) == 255) ? 0 : EEPROM.read(9 + bordersGroup);
     }
     // Функция для смены режима финкционирования
     void changeModeTo(int changeToMode)
@@ -300,7 +325,20 @@ class workObj{
       mode = changeToMode;
     }
 
-
+    void showBorders(int bordersGroup){
+      Serial.println("-------------------------------------------");
+      Serial.println("LowGroundHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowGroundHum));
+      Serial.println("HighGroundHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].highGroundHum));
+      Serial.println("LowGroundTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowGroundTemp));
+      Serial.println("HighGroundTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].highGroundTemp));
+      Serial.println("LowAirHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirHum));
+      Serial.println("HighAirHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirHum));
+      Serial.println("LowAirTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirTemp));
+      Serial.println("HighAirTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirTemp));
+      Serial.println("LowLightLeve" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowLightLevel));
+      Serial.println("HighLightLevel" + String(bordersGroup) + " :" + String(borders[bordersGroup].highLightLevel));
+      Serial.println("-------------------------------------------");
+    }
     int getMode(){ return mode; }
 };
 // Прототип функции разбора пакета данных с блока сенсоров
@@ -311,13 +349,17 @@ void showPackage(packetData);
 // Зачаток функции для опроса всех блоков сенсоров разом
 void slavesQuery();
 
-workObj obj1(1, true);
+workObj obj1(1, false);
 
 
 // Прототип функции 
 
 
-
+//  000000  000000  00        00    00   00   00000
+//  00  00  00      00       0  0    00 00   00
+//  000000  000000  00      000000    000     0000
+//  00 00   00      00      00  00   00         00
+//  00  00  000000  000000  00  00  00       00000
 
 // Функиця для получения режима от Blynk
 BLYNK_WRITE(V1)
@@ -332,16 +374,20 @@ BLYNK_WRITE(V1)
 // Pump04_1
 BLYNK_WRITE(V10)
 {
+  // Serial.println("switching r1");
   int a = param.asInt();
-  if (obj1.getMode() == manual)
-    obj1.pump04_1.setState( (a == 0)? true : false );
+  if (obj1.getMode() == manual){
+    pump04_1.setState( (a == 0)? true : false );
+  }
+
+    //
 }
 // Реле 2
 // Pump04_2
 BLYNK_WRITE(V11){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.pump04_2.setState( (a == 0)? true : false );
+    pump04_2.setState( (a == 0)? true : false );
 }
 
 // Реле 3
@@ -349,7 +395,7 @@ BLYNK_WRITE(V11){
 BLYNK_WRITE(V12){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.pump04_3.setState( (a == 0)? true : false );
+    pump04_3.setState( (a == 0)? true : false );
 }
 
 // Реле 4
@@ -357,7 +403,7 @@ BLYNK_WRITE(V12){
 BLYNK_WRITE(V13){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.valve_1.setState( (a == 0)? true : false );
+    valve_1.setState( (a == 0)? true : false );
 }
 
 // Реле 5
@@ -365,7 +411,7 @@ BLYNK_WRITE(V13){
 BLYNK_WRITE(V14){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.valve_2.setState( (a == 0)? true : false );
+    valve_2.setState( (a == 0)? true : false );
 }
 
 // Реле 6
@@ -373,7 +419,7 @@ BLYNK_WRITE(V14){
 BLYNK_WRITE(V15){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.light3_1.setState( (a == 0)? true : false );
+    light3_1.setState( (a == 0)? true : false );
 }
 
 // Реле 7
@@ -381,7 +427,7 @@ BLYNK_WRITE(V15){
 BLYNK_WRITE(V16){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.light1_1.setState( (a == 0)? true : false );
+    light1_1.setState( (a == 0)? true : false );
 }
 
 // Реле 8
@@ -389,7 +435,7 @@ BLYNK_WRITE(V16){
 BLYNK_WRITE(V17){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.light1_2.setState( (a == 0)? true : false );
+    light1_2.setState( (a == 0)? true : false );
 }
 
 // Реле 9
@@ -397,7 +443,7 @@ BLYNK_WRITE(V17){
 BLYNK_WRITE(V18){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.light01_1.setState( (a == 0)? true : false );
+    light01_1.setState( (a == 0)? true : false );
 }
 
 // Реле 10
@@ -405,7 +451,7 @@ BLYNK_WRITE(V18){
 BLYNK_WRITE(V19){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.light01_2.setState( (a == 0)? true : false );
+    light01_2.setState( (a == 0)? true : false );
 }
 
 // Реле 11
@@ -413,7 +459,7 @@ BLYNK_WRITE(V19){
 BLYNK_WRITE(V20){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.distrif1_1.setState( (a == 0)? true : false );
+    distrif1_1.setState( (a == 0)? true : false );
 }
 
 // Реле 12
@@ -421,7 +467,7 @@ BLYNK_WRITE(V20){
 BLYNK_WRITE(V21){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.distrif1_2.setState( (a == 0)? true : false );
+    distrif1_2.setState( (a == 0)? true : false );
 }
 
 // Реле 13
@@ -429,7 +475,7 @@ BLYNK_WRITE(V21){
 BLYNK_WRITE(V22){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.steamgen1_1.setState( (a == 0)? true : false );
+    steamgen1_1.setState( (a == 0)? true : false );
 }
 
 // Реле 14
@@ -437,59 +483,174 @@ BLYNK_WRITE(V22){
 BLYNK_WRITE(V23){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    obj1.siod1_1.setState( (a == 0)? true : false );
+    siod1_1.setState( (a == 0)? true : false );
 }
 
 // Реле 15
 // empty
 BLYNK_WRITE(V24){
-  int a = param.asInt();
+  // int a = param.asInt();
   
 }
 
 // Реле 16
 // empty
 BLYNK_WRITE(V25){
-  int a = param.asInt();
+  // int a = param.asInt();
   
 }
 
 
+// Граничные значения 
+// Структура для хранения граничных значений для блоков сенсоров и автоматики
+// struct borderValues{
+//   float lowGroundHum;
+//   float highGroundHum;
+//   float lowGroundTemp;
+//   float highGroundTemp;
+//   float lowAirHum;
+//   float highAirHum;
+//   float lowAirTemp;
+//   float highAirTemp;
+//   float lowLightLevel;
+//   float highLightLevel;
+// };
+// Group1
+// V30 -> V39
+// Group2
+// V40 -> V49
+
+// GROUP 1
+// lowGroundHum1
+BLYNK_WRITE(V30){
+  float a = param.asFloat();
+  obj1.setBorder("lowGroundHum", a, 1);
+  obj1.saveBordersToEEPROM(1);
+}
+// highGroundHum1
+BLYNK_WRITE(V31){
+  float a = param.asFloat();
+  obj1.setBorder("highGroundHum", a, 1);
+}
+// lowGroundTemp1
+BLYNK_WRITE(V32){
+  float a = param.asFloat();
+  obj1.setBorder("lowGroundTemp", a, 1);
+}
+// highGroundTemp1
+BLYNK_WRITE(V33){
+  float a = param.asFloat();
+  obj1.setBorder("highGroundTemp", a, 1);
+}
+// lowAirHum1
+BLYNK_WRITE(V34){
+  float a = param.asFloat();
+  obj1.setBorder("lowAirHum", a, 1);
+}
+// highAirHum1
+BLYNK_WRITE(V35){
+  float a = param.asFloat();
+  obj1.setBorder("highAirHum", a, 1);
+}
+// lowAirTemp1
+BLYNK_WRITE(V36){
+  float a = param.asFloat();
+  obj1.setBorder("lowAirTemp", a, 1);
+}
+// highAirTemp1
+BLYNK_WRITE(V37){
+  float a = param.asFloat();
+  obj1.setBorder("highAirTemp", a, 1);
+}
+// lowLightLevel1
+BLYNK_WRITE(V38){
+  float a = param.asFloat();
+  obj1.setBorder("lowLightLevel", a, 1);
+}
+// highLightLevel1
+BLYNK_WRITE(V39){
+  float a = param.asFloat();
+  obj1.setBorder("highLightLevel", a, 1);
+}
+
+// GROUP 2
+// lowGroundHum2
+BLYNK_WRITE(V40){
+  float a = param.asFloat();
+  obj1.setBorder("lowGroundHum", a, 2);
+}
+// highGroundHum2
+BLYNK_WRITE(V41){
+  float a = param.asFloat();
+  obj1.setBorder("highGroundHum", a, 2);
+}
+// lowGroundTemp2
+BLYNK_WRITE(V42){
+  float a = param.asFloat();
+  obj1.setBorder("lowGroundTemp", a, 2);
+}
+// highGroundTemp2
+BLYNK_WRITE(V43){
+  float a = param.asFloat();
+  obj1.setBorder("highGroundTemp", a, 2);
+}
+// lowAirHum2
+BLYNK_WRITE(V44){
+  float a = param.asFloat();
+  obj1.setBorder("lowAirHum", a, 2);
+}
+// highAirHum2
+BLYNK_WRITE(V45){
+  float a = param.asFloat();
+  obj1.setBorder("highAirHum", a, 2);
+}
+// lowAirTemp2
+BLYNK_WRITE(V46){
+  float a = param.asFloat();
+  obj1.setBorder("lowAirTemp", a, 2);
+}
+// highAirTemp2
+BLYNK_WRITE(V47){
+  float a = param.asFloat();
+  obj1.setBorder("highAirTemp", a, 2);
+}
+// lowLightLevel2
+BLYNK_WRITE(V48){
+  float a = param.asFloat();
+  obj1.setBorder("lowLightLeve", a, 2);
+}
+// highLightLevel2
+BLYNK_WRITE(V49){
+  float a = param.asFloat();
+  obj1.setBorder("HighLightLevel", a, 2);
+}
 
 void setup() {
-  // Wire.begin();        // join i2c bus (address optional for master)
+  EEPROM.begin(25);
+  Wire.begin();        // Join I2C bus
+  pcf_1.begin();       // Connect PCF8574_1 pin extension
+  pcf_2.begin();       // Connect PCF8574_2 pin extension
   Serial.begin(115200);  // start serial for output
-  // obj1.initRelays(relay1, relay2, relay3);
-
-  Blynk.begin(auth, ssid, pass, IPAddress(192,168,0,106), 8080);
+  obj1.restoreBordersFromEEPROM(1);
+  // obj1.restoreBordersFromEEPROM(2);
+  // Blynk.begin(auth, ssid, pass);
+  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
   // packetData data[slavesNumber]; 
-  // relaysUsing.setInterval(500L, setFlagTrue);
-  // sensorsQuerry.setInterval(2000L, slavesQuery(data));
+
 }
 
 void loop() {
-  // relaysUsing.run();
-  // sensorsQuerry.run();
-  // callRelays();
-  Blynk.run();
-
   
+  // saveEEPROM.run();
+  obj1.showBorders(1);
+  delay(1000);
   
+  // obj1.showBorders(2);
   
-  // delay(1000);
+  Blynk.run();  
+  obj1.useRelays();
 }
 
-
-void setFlagTrue(){
-  setFlag = true;
-}
-
-void callRelays(){
-  if (setFlag == true){
-    obj1.useRelays();
-  }
-  setFlag = false;
-}
 // Функция для применения значения реле по его номеру
 void setRelay(relay r1){
       switch(r1.number){
@@ -542,14 +703,14 @@ void setRelay(relay r1){
           pcf_2.write(7, !r1.returnState());
           break;
         default:
-          Serial.print("Error no such relay");
+          // Serial.println("Error no such relay. Requered number :" + String(r1.number));
           break;
       }
 }
 
 
 // Функция для опроса всех блоков сенсоров разом
-// TODO - переделать тк сложно будет наладить обмен данныим между функцией и классом
+// 
 void slavesQuery(packetData* data[]){
   for(int i = 1; i <= slavesNumber; i++){
     Wire.requestFrom(i, 28);

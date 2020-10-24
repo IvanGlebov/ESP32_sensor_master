@@ -179,7 +179,6 @@ class workObj{
     - highAirTemp
     - lowLightLevel
     - highLightLevel
-
     */
     void setBorder(String border, float value, int bordersGroup){
       
@@ -293,31 +292,53 @@ class workObj{
 
     }
     // Функция для сохранения всех значений границ в энергонезависимую память
-    void saveBordersToEEPROM(int bordersGroup){
-      EEPROM.write(0 + bordersGroup, borders[bordersGroup].lowGroundHum);
-      EEPROM.write(1 + bordersGroup, borders[bordersGroup].highGroundHum);
-      EEPROM.write(2 + bordersGroup, borders[bordersGroup].lowGroundTemp);
-      EEPROM.write(3 + bordersGroup, borders[bordersGroup].highGroundTemp);
-      EEPROM.write(4 + bordersGroup, borders[bordersGroup].lowAirHum);
-      EEPROM.write(5 + bordersGroup, borders[bordersGroup].highAirHum);
-      EEPROM.write(6 + bordersGroup, borders[bordersGroup].lowAirTemp);
-      EEPROM.write(7 + bordersGroup, borders[bordersGroup].highAirTemp);
-      EEPROM.write(8 + bordersGroup, borders[bordersGroup].lowLightLevel);
-      EEPROM.write(9 + bordersGroup, borders[bordersGroup].highLightLevel);
+    /* Ключи для значений
+    - lowGroundHum
+    - highGroundHum
+    - lowGroundTemp
+    - highGroundTemp
+    - lowAirHum
+    - highAirHum
+    - lowAirTemp
+    - highAirTemp
+    - lowLightLevel
+    - highLightLevel
+    */
+    void saveBordersToEEPROM(int bordersGroup, String border){
+      if (border == "lowGroundHum")
+        EEPROM.write(0 + bordersGroup, borders[bordersGroup].lowGroundHum);
+      if (border == "highGroundHum")
+        EEPROM.write(1 + bordersGroup, borders[bordersGroup].highGroundHum);
+      if (border == "lowGroundTemp")
+        EEPROM.write(2 + bordersGroup, borders[bordersGroup].lowGroundTemp+40);
+      if (border == "highGroundTemp")
+        EEPROM.write(3 + bordersGroup, borders[bordersGroup].highGroundTemp+40);
+      if (border == "lowAirHum")
+        EEPROM.write(4 + bordersGroup, borders[bordersGroup].lowAirHum);
+      if (border == "highAirHum")
+        EEPROM.write(5 + bordersGroup, borders[bordersGroup].highAirHum);
+      if (border == "lowAirTemp")
+        EEPROM.write(6 + bordersGroup, borders[bordersGroup].lowAirTemp+40);
+      if (border == "highAirTemp")
+        EEPROM.write(7 + bordersGroup, borders[bordersGroup].highAirTemp+40);
+      if (border == "lowLightLevel")
+        EEPROM.write(8 + bordersGroup, borders[bordersGroup].lowLightLevel/10);
+      if (border == "highLightLevel")
+        EEPROM.write(9 + bordersGroup, borders[bordersGroup].highLightLevel/10);
       EEPROM.commit();
     }
     // Функция для чтения всех значений границ из энергонезависимой памяти
     void restoreBordersFromEEPROM(int bordersGroup){
       borders[bordersGroup].lowGroundHum = (EEPROM.read(0 + bordersGroup) == 255) ? 0 : EEPROM.read(0 + bordersGroup);
       borders[bordersGroup].highGroundHum = (EEPROM.read(1 + bordersGroup) == 255) ? 0 : EEPROM.read(1 + bordersGroup);
-      borders[bordersGroup].lowGroundTemp = (EEPROM.read(2 + bordersGroup) == 255) ? 0 : EEPROM.read(2 + bordersGroup);
-      borders[bordersGroup].highGroundTemp = (EEPROM.read(3 + bordersGroup) == 255) ? 0 : EEPROM.read(3 + bordersGroup);
+      borders[bordersGroup].lowGroundTemp = (EEPROM.read(2 + bordersGroup) == 255) ? 0 : EEPROM.read(2 + bordersGroup)-40;
+      borders[bordersGroup].highGroundTemp = (EEPROM.read(3 + bordersGroup) == 255) ? 0 : EEPROM.read(3 + bordersGroup)-40;
       borders[bordersGroup].lowAirHum = (EEPROM.read(4 + bordersGroup) == 255) ? 0 : EEPROM.read(4 + bordersGroup);
       borders[bordersGroup].highAirHum = (EEPROM.read(5 + bordersGroup) == 255) ? 0 : EEPROM.read(5 + bordersGroup);
-      borders[bordersGroup].lowAirTemp = (EEPROM.read(6 + bordersGroup) == 255) ? 0 : EEPROM.read(6 + bordersGroup);
-      borders[bordersGroup].highAirTemp = (EEPROM.read(7 + bordersGroup) == 255) ? 0 : EEPROM.read(7 + bordersGroup);
-      borders[bordersGroup].lowLightLevel = (EEPROM.read(8 + bordersGroup) == 255) ? 0 : EEPROM.read(8 + bordersGroup);
-      borders[bordersGroup].highLightLevel = (EEPROM.read(9 + bordersGroup) == 255) ? 0 : EEPROM.read(9 + bordersGroup);
+      borders[bordersGroup].lowAirTemp = (EEPROM.read(6 + bordersGroup) == 255) ? 0 : EEPROM.read(6 + bordersGroup)-40;
+      borders[bordersGroup].highAirTemp = (EEPROM.read(7 + bordersGroup) == 255) ? 0 : EEPROM.read(7 + bordersGroup)-40;
+      borders[bordersGroup].lowLightLevel = (EEPROM.read(8 + bordersGroup) == 255) ? 0 : EEPROM.read(8 + bordersGroup)*10;
+      borders[bordersGroup].highLightLevel = (EEPROM.read(9 + bordersGroup) == 255) ? 0 : EEPROM.read(9 + bordersGroup)*10;
     }
     // Функция для смены режима финкционирования
     void changeModeTo(int changeToMode)
@@ -352,7 +373,7 @@ void slavesQuery();
 workObj obj1(1, false);
 
 
-// Прототип функции 
+
 
 
 //  000000  000000  00        00    00   00   00000
@@ -501,20 +522,14 @@ BLYNK_WRITE(V25){
 }
 
 
+
+// 00000   000000  00000   00000   000000  00000   000000
+// 00  00  00  00  00  00  00  00  00      00  00  00
+// 000000  00  00  00000   00  00  000000  00000   000000
+// 00  00  00  00  00 00   00  00  00      00 00       00
+// 00000   000000  00  00  00000   000000  00  00  000000
 // Граничные значения 
-// Структура для хранения граничных значений для блоков сенсоров и автоматики
-// struct borderValues{
-//   float lowGroundHum;
-//   float highGroundHum;
-//   float lowGroundTemp;
-//   float highGroundTemp;
-//   float lowAirHum;
-//   float highAirHum;
-//   float lowAirTemp;
-//   float highAirTemp;
-//   float lowLightLevel;
-//   float highLightLevel;
-// };
+
 // Group1
 // V30 -> V39
 // Group2
@@ -525,52 +540,61 @@ BLYNK_WRITE(V25){
 BLYNK_WRITE(V30){
   float a = param.asFloat();
   obj1.setBorder("lowGroundHum", a, 1);
-  obj1.saveBordersToEEPROM(1);
+  obj1.saveBordersToEEPROM(1, "lowGroundHum");
 }
 // highGroundHum1
 BLYNK_WRITE(V31){
   float a = param.asFloat();
   obj1.setBorder("highGroundHum", a, 1);
+  obj1.saveBordersToEEPROM(1, "highGroundHum");
 }
 // lowGroundTemp1
 BLYNK_WRITE(V32){
   float a = param.asFloat();
   obj1.setBorder("lowGroundTemp", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowGroundTemp");
 }
 // highGroundTemp1
 BLYNK_WRITE(V33){
   float a = param.asFloat();
   obj1.setBorder("highGroundTemp", a, 1);
+  obj1.saveBordersToEEPROM(1, "highGroundTemp");
 }
 // lowAirHum1
 BLYNK_WRITE(V34){
   float a = param.asFloat();
   obj1.setBorder("lowAirHum", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirHum");
 }
 // highAirHum1
 BLYNK_WRITE(V35){
   float a = param.asFloat();
   obj1.setBorder("highAirHum", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirHum");
 }
 // lowAirTemp1
 BLYNK_WRITE(V36){
   float a = param.asFloat();
   obj1.setBorder("lowAirTemp", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirTemp");
 }
 // highAirTemp1
 BLYNK_WRITE(V37){
   float a = param.asFloat();
   obj1.setBorder("highAirTemp", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirTemp");
 }
 // lowLightLevel1
 BLYNK_WRITE(V38){
   float a = param.asFloat();
-  obj1.setBorder("lowLightLevel", a, 1);
+  obj1.setBorder("lowLightLevel", a*10, 1);
+  obj1.saveBordersToEEPROM(1, "lowLightLevel");
 }
 // highLightLevel1
 BLYNK_WRITE(V39){
   float a = param.asFloat();
-  obj1.setBorder("highLightLevel", a, 1);
+  obj1.setBorder("highLightLevel", a*10, 1);
+  obj1.saveBordersToEEPROM(1, "highLightLevel");
 }
 
 // GROUP 2
@@ -578,55 +602,65 @@ BLYNK_WRITE(V39){
 BLYNK_WRITE(V40){
   float a = param.asFloat();
   obj1.setBorder("lowGroundHum", a, 2);
+  obj1.saveBordersToEEPROM(2, "lowGroundHum");
 }
 // highGroundHum2
 BLYNK_WRITE(V41){
   float a = param.asFloat();
   obj1.setBorder("highGroundHum", a, 2);
+  obj1.saveBordersToEEPROM(2, "highGrundHum");
 }
 // lowGroundTemp2
 BLYNK_WRITE(V42){
   float a = param.asFloat();
   obj1.setBorder("lowGroundTemp", a, 2);
+  obj1.saveBordersToEEPROM(2,"lowGroundTemp");
 }
 // highGroundTemp2
 BLYNK_WRITE(V43){
   float a = param.asFloat();
   obj1.setBorder("highGroundTemp", a, 2);
+  obj1.saveBordersToEEPROM(2, "highGroundTemp");
 }
 // lowAirHum2
 BLYNK_WRITE(V44){
   float a = param.asFloat();
   obj1.setBorder("lowAirHum", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirHum");
 }
 // highAirHum2
 BLYNK_WRITE(V45){
   float a = param.asFloat();
   obj1.setBorder("highAirHum", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirHum");
 }
 // lowAirTemp2
 BLYNK_WRITE(V46){
   float a = param.asFloat();
   obj1.setBorder("lowAirTemp", a, 2);
+  obj1.saveBordersToEEPROM(2, "lowAirTemp");
 }
 // highAirTemp2
 BLYNK_WRITE(V47){
   float a = param.asFloat();
   obj1.setBorder("highAirTemp", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirTemp");
 }
 // lowLightLevel2
 BLYNK_WRITE(V48){
   float a = param.asFloat();
-  obj1.setBorder("lowLightLeve", a, 2);
+  obj1.setBorder("lowLightLeve", a*10, 2);
+  obj1.saveBordersToEEPROM(2, "lowLightLevel");
 }
 // highLightLevel2
 BLYNK_WRITE(V49){
   float a = param.asFloat();
-  obj1.setBorder("HighLightLevel", a, 2);
+  obj1.setBorder("HighLightLevel", a*10, 2);
+  obj1.saveBordersToEEPROM(2, "highLightLevel");
 }
 
 void setup() {
-  EEPROM.begin(25);
+  EEPROM.begin(25); // Init 25 bytes of EEPROM
   Wire.begin();        // Join I2C bus
   pcf_1.begin();       // Connect PCF8574_1 pin extension
   pcf_2.begin();       // Connect PCF8574_2 pin extension

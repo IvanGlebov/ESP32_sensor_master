@@ -97,6 +97,7 @@ class relay{
     bool returnState(){ return state; }
 };
 
+
 relay pump04_1 = relay(1, "Pump0.4Kv-1");
 relay pump04_2 = relay(2, "Pump0.4Kv-2");
 relay pump04_3 = relay(3, "Pump0.4Kv-3");
@@ -113,12 +114,10 @@ relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1");
 relay siod1_1 = relay(14, "SIOD1Kv");
 
 
-// void changeRelays(){}
 // Функция для применения значений реле
 void setRelay(relay r1);
 void callRelays();
-// void setFlagTrue();
-// void switchRelayTo(int relayNumber, bool state);
+
 
 class workObj{
   private:
@@ -225,7 +224,7 @@ class workObj{
 
     }
     
-
+    // Функция для переключения состояний реле
     void useRelays() const {
       // Relays are working in inverted mode - 0 is ON, 1 is OFF
       setRelay(pump04_1);
@@ -246,51 +245,13 @@ class workObj{
 
 
     // Функция для автоматического полива по границам для каждого блока сенсоров
-    bool autoGroundHum(int sensorBlocknumber){
-      // Watering
-      // 
-      /*
-      if (sensorBlocknumber == 1){
-        if (sensors1.groundHum < borders.lowGroundHum){
-          pump04_1.on();
-        }
-        if (sensors1.groundHum > borders.highGroundHum){
-          pump04_2.off();
-        }
-      }
-      
-      if (sensorBlocknumber == 2){
-        if (sensors2.groundHum < borders.lowGroundHum){
-          pump04_2.on();
-        }
-        if (sensors1.groundHum > borders.highGroundHum){
-          pump04_2.off();
-        }
-      }
-
-      if (sensorBlocknumber == 3){
-        if (sensors3.groundHum < borders.lowGroundHum){
-          pump04_3.on();
-        }
-        if (sensors1.groundHum > borders.highGroundHum){
-          pump04_3.off();
-        }
-      }*/
-
-      return 0; // Left for errors
-    }
     
 
     // TODO - допиать autoLight() спросив что она должна делать
 
     // Функция для автоматического включения света 
-    bool autoLight(){
-      return 0; // Left for errors
-    }
     
-    bool autoVent(){
-
-    }
+    
     // Функция для сохранения всех значений границ в энергонезависимую память
     /* Ключи для значений
     - lowGroundHum

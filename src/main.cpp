@@ -229,44 +229,242 @@ class workObj{
     // Функция для переключения состояний реле
     void useRelays() const {
       // Relays are working in inverted mode - 0 is ON, 1 is OFF
-      setRelay(pump04_1);
-      setRelay(pump04_2);
-      setRelay(pump04_3);
-      setRelay(valve_1);
-      setRelay(valve_2);
-      setRelay(light3_1);
-      setRelay(light1_1);
-      setRelay(light1_2);
-      setRelay(light01_1);
-      setRelay(light01_2);
-      setRelay(distrif1_1);
-      setRelay(distrif1_2);
-      setRelay(steamgen1_1);
-      setRelay(siod1_1);
+      setRelay(pump04_1); // Помпа капельного полива. Общая на 2 блока
+      setRelay(valve1_1); // Вентиль верхней аэрации блока 1
+      setRelay(valve1_2); // Вентиль верхней аэрации блока 2
+      setRelay(valve2_1); // Вентиль нижней аэрации блока 1
+      setRelay(valve2_2); // Вентиль нижней аэрации блока 2
+      // setRelay(light3_1);
+      setRelay(light1_1); // Основное освещение в блоке 1
+      setRelay(light1_2); // Основное освещение в блоке 2
+      setRelay(light01_1); // Дальнее красное освещение в блоке 1
+      setRelay(light01_2); // Дальнее красное освещение в блоке 2
+      setRelay(distrif1_1); // Вентиляция в блоке 1
+      setRelay(distrif1_2); // Вентиляция в блоке 2
+      setRelay(steamgen1_1); // Увлажнитель в блоке 1
+      setRelay(steamgen1_2); // Увлажнитель в блоке 2
+    }
+    
+    // Функция для обработки автоматического полива
+    void groundHumidControl(){
+      
+    }
+    // Функция для автоматической обработки автоматики отдельных блоков
+    void lightSeparateControl(){
+      
+
+  
     }
 
+    // Функция для включения или выключения полива отдельного блока
 
-    // Функция для автоматического полива по границам для каждого блока сенсоров
-    
 
-    // TODO - допиать autoLight() спросив что она должна делать
+    // Функция для включения или выключения освещения отдельного блока
+    
+    // Функция обработки температуры воздуха. 
+    // Если температура низкая, то включается отопление,
+    // если температура высокая, то включается вентиляция конкретного блока
+    // теплицы (из 2-х)
+    // Возвращает 2 если функция занята отоплением и 1 если вентиляцией.
+    // 0 возвращается только если функция ничего не сделала
+    int airTempCheck(){
+      // Переменная для хранения состояния условий. Если возвращается "1", то активна вентиляция. Если "2", то активно отопление
+      // если возвращается "0", то с устройсовом исполнителем можно взаимодействовать спокойно
+      int returnFlag = 0;
+      
+      // Если сейчас днейной режим, то используем дневные границы
+      if (timeNow == day){
+        // Нагрев если маленькая температура
+        // Блок 1
+        if (sensors1.airTemp < borders[0].lowAirTempDay){
+          heater1_1.on();
+          returnFlag = 2;
+        }
+        else{
+          heater1_1.off();
+          returnFlag = (returnFlag == 2) ? 2 : 0;
+        }
 
-    // Функция для автоматического включения света 
+        // Блок 2
+        if (sensors2.airTemp < borders[1].lowAirTempDay){
+          heater1_2.on();
+          returnFlag = 2;
+        }
+        else{
+          heater1_2.off();
+          returnFlag = (returnFlag == 2) ? 2 : 0;
+        }
+
+        // Включение вентиляции если высокая температура
+        // Блок 1
+        if (sensors1.airTemp > borders[0].highAirTempDay){
+          distrif1_1.on();
+          returnFlag = 1;
+        } // Если вентиляция не занята другой функцией, то выключаем её
+        else if (airHumCheck() != 1){
+          distrif1_1.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+        //  Блок 2
+        if (sensors2.airTemp > borders[1].highAirTempDay){
+          distrif1_2.on();
+          returnFlag = 1;
+        } // Если вентиляция не занята другой функцией, то выключаем её
+        else if (airHumCheck() != 1) {
+          distrif1_2.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+      }
+
+      // Если сейчас ночной режим, то используем ночные границы
+      if (timeNow == night){
+        // Нагрев если маленькая температура
+        // Блок 1
+        if (sensors1.airTemp < borders[0].lowAirTempNight){
+          heater1_1.on();
+          returnFlag = 2;
+        }
+        else{
+          heater1_1.off();
+          returnFlag = (returnFlag == 2) ? 2 : 0;
+        }
+
+        // Блок 2
+        if (sensors2.airTemp < borders[1].lowAirTempNight){
+          heater1_2.on();
+          returnFlag = 2;
+        }
+        else{
+          heater1_2.off();
+          returnFlag = (returnFlag == 2) ? 2 : 0;
+        }
+
+        // Включение вентиляции если высокая температура
+        // Блок 1
+        if (sensors1.airTemp > borders[0].highAirTempNight){
+          distrif1_1.on();
+          returnFlag = 1;
+        }
+        else if (airHumCheck() != 1) {
+          distrif1_1.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+        //  Блок 2
+        if (sensors2.airTemp > borders[1].highAirTempNight){
+          distrif1_2.on();
+          returnFlag = 1;
+        }
+        else if (airHumCheck() != 1) {
+          distrif1_2.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+      }
+      
+      return returnFlag;
+    }
     
-    
+    // Возвращает 1 если функция занята вентиляцией и 2 если увлежнением.
+    // 0 возвращается только если функция ничего не сделала
+    int airHumCheck(){
+      // Переменная для хранения состояния условий. Если возвращается "1", то активно каоке-то условие и выключать не надо
+      // если возвращается "0", то с устройсовом исполнителем можно взаимодействовать спокойно
+      int returnFlag = 0;
+      // Если сейчас днейной режим, то используем дневные границы
+      if (timeNow == day){
+        // Если низкая влажность, то включить парогенератор
+        // Блок 1
+        if (sensors1.airHum < borders[0].lowAirHumDay){
+          steamgen1_1.on();
+          returnFlag = 1;
+        }
+        else{
+          steamgen1_1.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+        // Блок 2
+        if (sensors2.airHum < borders[1].lowAirHumDay){
+          steamgen1_2.on();
+          returnFlag = 1;
+        }
+        else{
+          steamgen1_2.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+
+        // Если высокая влажность, то включить вентиляцию. Если влажность вернулась в норму и другое устройство не задействует 
+        // исполнитель, то выключить вентиляцию
+        // Блок 1
+        if (sensors1.airHum > borders[0].highAirHumDay){
+          distrif1_1.on();
+          returnFlag = 1;
+        }
+        else if (airTempCheck() != 1) {
+          distrif1_1.off();
+          // Если возвращаемое значение уже успело стать равным 1, то не надо его обнулять и ломать логику.
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+          // 
+        }
+        // Блок 2
+        if (sensors2.airHum > borders[1].highAirHumDay){
+          distrif1_2.on();
+          returnFlag = 1;
+        } 
+        else if (airTempCheck() != 1){
+          distrif1_2.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+      
+      }
+
+      // Если сейчас ночной режим, то используем ночные границы
+      if (timeNow == night){
+        // Если низкая влажность, то включить парогенератор
+        // Блок 1
+        if (sensors1.airHum < borders[0].lowAirHumNight){
+          steamgen1_1.on();
+          returnFlag = 2;
+        }
+        else{
+          steamgen1_1.off();
+          returnFlag = (returnFlag == 2) ? 2 : 0;
+        }
+        // Блок 2
+        if (sensors2.airHum < borders[1].lowAirHumNight){
+          steamgen1_2.on();
+          returnFlag = 2;
+        }
+        else{
+          steamgen1_2.off();
+          returnFlag = (returnFlag == 2) ? 2 : 0;
+        }
+
+        // Если высокая влажность, то включить вентиляцию. Если влажность вернулась в норму и другое устройство не задействует 
+        // исполнитель, то выключить вентиляцию
+        // Блок 1
+        if (sensors1.airHum > borders[0].highAirHumNight){
+          distrif1_1.on();
+          returnFlag = 1;
+        }
+        else if (airTempCheck() != 1) {
+          distrif1_1.off();
+          // Если возвращаемое значение уже успело стать равным 1, то не надо его обнулять и ломать логику.
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+          // 
+        }
+        // Блок 2
+        if (sensors2.airHum > borders[1].highAirHumNight){
+          distrif1_2.on();
+          returnFlag = 1;
+        } 
+        else if (airTempCheck() != 1){
+          distrif1_2.off();
+          returnFlag = (returnFlag == 1) ? 1 : 0;
+        }
+      
+      }
+    }
     // Функция для сохранения всех значений границ в энергонезависимую память
-    /* Ключи для значений
-    - lowGroundHum
-    - highGroundHum
-    - lowGroundTemp
-    - highGroundTemp
-    - lowAirHum
-    - highAirHum
-    - lowAirTemp
-    - highAirTemp
-    - lowLightLevel
-    - highLightLevel
-    */
+
     void saveBordersToEEPROM(int bordersGroup, String border){
       if (border == "lowGroundHum")
         EEPROM.write(0 + bordersGroup, borders[bordersGroup].lowGroundHum);
@@ -629,7 +827,7 @@ void setup() {
   pcf_2.begin();       // Connect PCF8574_2 pin extension
   Serial.begin(115200);  // start serial for output
   obj1.restoreBordersFromEEPROM(1);
-  // obj1.restoreBordersFromEEPROM(2);
+  obj1.restoreBordersFromEEPROM(2);
   // Blynk.begin(auth, ssid, pass);
   Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
   // packetData data[slavesNumber]; 
@@ -639,13 +837,18 @@ void setup() {
 void loop() {
   
   // saveEEPROM.run();
-  obj1.showBorders(1);
-  delay(1000);
+  // obj1.showBorders(1);
+  // delay(1000);
   
   // obj1.showBorders(2);
   
   Blynk.run();  
   obj1.useRelays();
+  if (obj1.getMode() == automatic){
+    obj1.groundHumidControl();
+    obj1.lightSeparateControl();
+  }
+
 }
 
 // Функция для применения значения реле по его номеру

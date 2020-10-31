@@ -71,16 +71,20 @@ struct borderValues{
 };
 // Функция для сброса значений границ определённой структуры к стандартным(предустановленным)
 void dropBorders(borderValues &b1){
-  b1.highAirHum = 80;
-  b1.highAirTemp = 40;
-  b1.highGroundHum = 90;
-  b1.highGroundTemp = 30;
-  b1.highLightLevel = 5000;
-  b1.lowAirHum = 20;
-  b1.lowAirTemp = 10;
-  b1.lowGroundHum = 20;
-  b1.lowGroundTemp = 12;
-  b1.lowLightLevel = 200;
+  b1.groundHumDay = 0;
+  b1.groundHumNight = 0;
+  b1.groundTempDay = 0;
+  b1.groundTempNight = 0;
+  b1.lowAirHumDay = 0;
+  b1.lowAirHumNight = 0;
+  b1.highAirHumDay = 0;
+  b1.highAirHumNight = 0;
+  b1.lowAirTempDay = 0;
+  b1.lowAirTempNight = 0;
+  b1.highAirTempDay = 0;
+  b1.highAirTempNight = 0;
+  b1.lightLevelDay = 0;
+  b1.lightLevelNight = 0;
 }
 
 

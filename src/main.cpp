@@ -57,7 +57,7 @@ struct borderValues{
   float groundHumDay;
   float groundHumNight;
   float groundTempDay;
-  float groundTempnight;
+  float groundTempNight;
   float lowAirHumDay;
   float lowAirHumNight;
   float highAirHumDay;

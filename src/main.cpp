@@ -23,6 +23,7 @@ PCF8574 pcf_2(0x21);
 #define slavesNumber 1
 #define debug true
 
+enum time {day, night};
 enum modes {automatic, manual, timeControlled, alert};
 // bool setFlag = false;
 
@@ -136,14 +137,10 @@ void callRelays();
 class workObj{
   private:
     int mode;
-
+    int timeNow;
     packetData sensors1, sensors2, sensors3;
     borderValues borders[2];
   public:
-
-    
-
-
     // If setAllDefaultFlag is false - border values will be recovered from EEPROM
     // Modes - automatic(0), manual(1), timeConrolled(2), alert(3)
     workObj(int startMode, bool setAllDefaultFlag) : mode(startMode) {
@@ -182,16 +179,7 @@ class workObj{
     }
     // Функция для установки конкретной границы и её значения
     /* Ключи для значений
-    - lowGroundHum
-    - highGroundHum
-    - lowGroundTemp
-    - highGroundTemp
-    - lowAirHum
-    - highAirHum
-    - lowAirTemp
-    - highAirTemp
-    - lowLightLevel
-    - highLightLevel
+
     */
     void setBorder(String border, float value, int bordersGroup){
       

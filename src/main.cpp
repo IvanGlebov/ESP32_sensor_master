@@ -124,12 +124,11 @@ relay light01_2 = relay(10, "Light0.1Kv-2"); // Длинный красный с
 relay distrif1_1 = relay(11, "Distrificator1Kv-1"); // Вентилятор 1
 relay distrif1_2 = relay(12, "Distrificator1Kv-1"); // Вентилятор 2
 
-relay heater1_1 = relay(13, "Hearet1Kv-1"); // Отопление 1
-relay heater1_2 = relay(14, "Heater1kv_2"); // Отопление 2
-
 relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1"); // Парогенератор 1
 relay steamgen1_2 = relay(13, "SteamGenerator1Kv-2"); // Парогенератор 2
 
+relay heater1_1 = relay(13, "Hearet1Kv-1"); // Отопление 1
+relay heater1_2 = relay(14, "Heater1kv_2"); // Отопление 2
 // relay siod1_1 = relay(14, "SIOD1Kv");
 
 
@@ -592,113 +591,115 @@ BLYNK_WRITE(V10)
     //
 }
 // Реле 2
-// Pump04_2
+// Вентиль верхней аэрации блока 1
 BLYNK_WRITE(V11){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    pump04_2.setState( (a == 0)? true : false );
+    valve1_1.setState( (a == 0)? true : false );
 }
 
 // Реле 3
-// Pump04_4
+// Вентиль верхней аэрации блока 2
 BLYNK_WRITE(V12){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    pump04_3.setState( (a == 0)? true : false );
+    valve1_2.setState( (a == 0)? true : false );
 }
 
 // Реле 4
-// valve1_1
+// Вентиль нижней аэрации блока 1
 BLYNK_WRITE(V13){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    valve_1.setState( (a == 0)? true : false );
+    valve2_1.setState( (a == 0)? true : false );
 }
 
 // Реле 5
-// valve1_2
+// Вентиль нижней аэрации блока 2
 BLYNK_WRITE(V14){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    valve_2.setState( (a == 0)? true : false );
+    valve2_2.setState( (a == 0)? true : false );
 }
 
 // Реле 6
-// light3_1
+// Основное освещение блока 1
 BLYNK_WRITE(V15){
-  int a = param.asInt();
-  if (obj1.getMode() == manual)
-    light3_1.setState( (a == 0)? true : false );
-}
-
-// Реле 7
-// light1_1
-BLYNK_WRITE(V16){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     light1_1.setState( (a == 0)? true : false );
 }
 
-// Реле 8
-// light1_2
-BLYNK_WRITE(V17){
+// Реле 7
+// Основное освещение блока 2
+BLYNK_WRITE(V16){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     light1_2.setState( (a == 0)? true : false );
 }
 
-// Реле 9
-// light01_1
-BLYNK_WRITE(V18){
+// Реле 8
+// Длинный красный свет блока 1
+BLYNK_WRITE(V17){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     light01_1.setState( (a == 0)? true : false );
 }
 
-// Реле 10
-// light01_2
-BLYNK_WRITE(V19){
+// Реле 9
+// Длинный красный свет блока 2
+BLYNK_WRITE(V18){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     light01_2.setState( (a == 0)? true : false );
 }
 
-// Реле 11
-// distrif1_1
-BLYNK_WRITE(V20){
+// Реле 10
+// Вентилятор блока 1
+BLYNK_WRITE(V19){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     distrif1_1.setState( (a == 0)? true : false );
 }
 
-// Реле 12
-// distrif1_2
-BLYNK_WRITE(V21){
+// Реле 11
+// Вентилятор блока 2
+BLYNK_WRITE(V20){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     distrif1_2.setState( (a == 0)? true : false );
 }
 
-// Реле 13
-// steamgen1_1
-BLYNK_WRITE(V22){
+// Реле 12
+// Парогенератор блока 1
+BLYNK_WRITE(V21){
   int a = param.asInt();
   if (obj1.getMode() == manual)
     steamgen1_1.setState( (a == 0)? true : false );
 }
 
+// Реле 13
+// Парогенератор блока 2
+BLYNK_WRITE(V22){
+  int a = param.asInt();
+  if (obj1.getMode() == manual)
+    steamgen1_2.setState( (a == 0)? true : false );
+}
+
 // Реле 14
-// siod1_1
+// Обогреватель блока 1
 BLYNK_WRITE(V23){
   int a = param.asInt();
   if (obj1.getMode() == manual)
-    siod1_1.setState( (a == 0)? true : false );
+    heater1_1.setState( (a == 0)? true : false );
 }
 
 // Реле 15
-// empty
+// Обогреватель блока 2
 BLYNK_WRITE(V24){
-  // int a = param.asInt();
+  int a = param.asInt();
+  if (obj1.getMode() == manual)
+    heater1_2.setState( (a == 0)? true : false );
   
 }
 
@@ -719,133 +720,183 @@ BLYNK_WRITE(V25){
 // Граничные значения 
 
 // Group1
-// V30 -> V39
+// V30 -> V43
 // Group2
-// V40 -> V49
+// V50 -> V63
 
 // GROUP 1
-// lowGroundHum1
+// groundHumDay1
 BLYNK_WRITE(V30){
   float a = param.asFloat();
-  obj1.setBorder("lowGroundHum", a, 1);
-  obj1.saveBordersToEEPROM(1, "lowGroundHum");
+  obj1.setBorder("groundHumDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "groundHumDay");
 }
-// highGroundHum1
+// groundHumNight1
 BLYNK_WRITE(V31){
   float a = param.asFloat();
-  obj1.setBorder("highGroundHum", a, 1);
-  obj1.saveBordersToEEPROM(1, "highGroundHum");
+  obj1.setBorder("groundHumNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "groundHumNight");
 }
-// lowGroundTemp1
+// groundTempDay1
 BLYNK_WRITE(V32){
   float a = param.asFloat();
-  obj1.setBorder("lowGroundTemp", a, 1);
-  obj1.saveBordersToEEPROM(1, "lowGroundTemp");
+  obj1.setBorder("groundTempDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "groundTempDay");
 }
-// highGroundTemp1
+// groundTempNight1
 BLYNK_WRITE(V33){
   float a = param.asFloat();
-  obj1.setBorder("highGroundTemp", a, 1);
-  obj1.saveBordersToEEPROM(1, "highGroundTemp");
+  obj1.setBorder("groundTempNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "groundTempNight");
 }
-// lowAirHum1
+// lowAirHumDay1
 BLYNK_WRITE(V34){
   float a = param.asFloat();
-  obj1.setBorder("lowAirHum", a, 1);
-  obj1.saveBordersToEEPROM(1, "lowAirHum");
+  obj1.setBorder("lowAirHumDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirHumDay");
 }
-// highAirHum1
+// lowAirHumNight1
 BLYNK_WRITE(V35){
   float a = param.asFloat();
-  obj1.setBorder("highAirHum", a, 1);
-  obj1.saveBordersToEEPROM(1, "highAirHum");
+  obj1.setBorder("lowAirHumNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirHumNight");
 }
-// lowAirTemp1
+// highAirHumDay1
 BLYNK_WRITE(V36){
   float a = param.asFloat();
-  obj1.setBorder("lowAirTemp", a, 1);
-  obj1.saveBordersToEEPROM(1, "lowAirTemp");
+  obj1.setBorder("highAirHumDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirHumDay");
 }
-// highAirTemp1
+// highAirHumNight1
 BLYNK_WRITE(V37){
   float a = param.asFloat();
-  obj1.setBorder("highAirTemp", a, 1);
-  obj1.saveBordersToEEPROM(1, "highAirTemp");
+  obj1.setBorder("highAirHumNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirHumNight");
 }
-// lowLightLevel1
+// lowAirTempDay1
 BLYNK_WRITE(V38){
   float a = param.asFloat();
-  obj1.setBorder("lowLightLevel", a*10, 1);
-  obj1.saveBordersToEEPROM(1, "lowLightLevel");
+  obj1.setBorder("lowAirTempDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirTempDay");
 }
-// highLightLevel1
+// lowAirTempNight1
 BLYNK_WRITE(V39){
   float a = param.asFloat();
-  obj1.setBorder("highLightLevel", a*10, 1);
-  obj1.saveBordersToEEPROM(1, "highLightLevel");
+  obj1.setBorder("lowAirTempNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirTempNight");
 }
-
-// GROUP 2
-// lowGroundHum2
+// highAirTempDay1
 BLYNK_WRITE(V40){
   float a = param.asFloat();
-  obj1.setBorder("lowGroundHum", a, 2);
-  obj1.saveBordersToEEPROM(2, "lowGroundHum");
+  obj1.setBorder("highAirTempDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirTempDay");
 }
-// highGroundHum2
+// highAirTempNight1
 BLYNK_WRITE(V41){
   float a = param.asFloat();
-  obj1.setBorder("highGroundHum", a, 2);
-  obj1.saveBordersToEEPROM(2, "highGrundHum");
+  obj1.setBorder("highAirTempNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirTempNight");
 }
-// lowGroundTemp2
+// lightLevelDay1
 BLYNK_WRITE(V42){
   float a = param.asFloat();
-  obj1.setBorder("lowGroundTemp", a, 2);
-  obj1.saveBordersToEEPROM(2,"lowGroundTemp");
+  obj1.setBorder("lightLevelDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "lightLevelDay");
 }
-// highGroundTemp2
+// lightLevelNight1
 BLYNK_WRITE(V43){
   float a = param.asFloat();
-  obj1.setBorder("highGroundTemp", a, 2);
-  obj1.saveBordersToEEPROM(2, "highGroundTemp");
+  obj1.setBorder("lightLevelNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "lightLevelNight");
 }
-// lowAirHum2
-BLYNK_WRITE(V44){
+
+
+// GROUP 2
+// groundHumDay2
+BLYNK_WRITE(V50){
   float a = param.asFloat();
-  obj1.setBorder("lowAirHum", a, 2);
-  obj1.saveBordersToEEPROM(2, "highAirHum");
+  obj1.setBorder("groundHumDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "groundHumDay");
 }
-// highAirHum2
-BLYNK_WRITE(V45){
+// groundHumNight2
+BLYNK_WRITE(V51){
   float a = param.asFloat();
-  obj1.setBorder("highAirHum", a, 2);
-  obj1.saveBordersToEEPROM(2, "highAirHum");
+  obj1.setBorder("groundHumNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "groundHumNight");
 }
-// lowAirTemp2
-BLYNK_WRITE(V46){
+// groundTempDay2
+BLYNK_WRITE(V52){
   float a = param.asFloat();
-  obj1.setBorder("lowAirTemp", a, 2);
-  obj1.saveBordersToEEPROM(2, "lowAirTemp");
+  obj1.setBorder("groundTempDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "groundTempDay");
 }
-// highAirTemp2
-BLYNK_WRITE(V47){
+// groundTempNight2
+BLYNK_WRITE(V53){
   float a = param.asFloat();
-  obj1.setBorder("highAirTemp", a, 2);
-  obj1.saveBordersToEEPROM(2, "highAirTemp");
+  obj1.setBorder("groundTempNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "groundTempNight");
 }
-// lowLightLevel2
-BLYNK_WRITE(V48){
+// lowAirHumDay2
+BLYNK_WRITE(V54){
   float a = param.asFloat();
-  obj1.setBorder("lowLightLeve", a*10, 2);
-  obj1.saveBordersToEEPROM(2, "lowLightLevel");
+  obj1.setBorder("lowAirHumDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "lowAirHumDay");
 }
-// highLightLevel2
-BLYNK_WRITE(V49){
+// lowAirHumNight2
+BLYNK_WRITE(V55){
   float a = param.asFloat();
-  obj1.setBorder("HighLightLevel", a*10, 2);
-  obj1.saveBordersToEEPROM(2, "highLightLevel");
+  obj1.setBorder("lowAirHumNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "lowAirHumNight");
 }
+// highAirHumDay2
+BLYNK_WRITE(V56){
+  float a = param.asFloat();
+  obj1.setBorder("highAirHumDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirHumDay");
+}
+// highAirHumNight1
+BLYNK_WRITE(V57){
+  float a = param.asFloat();
+  obj1.setBorder("highAirHumNight", a, 1);
+  obj1.saveBordersToEEPROM(1, "highAirHumNight");
+}
+// lowAirTempDay1
+BLYNK_WRITE(V58){
+  float a = param.asFloat();
+  obj1.setBorder("lowAirTempDay", a, 1);
+  obj1.saveBordersToEEPROM(1, "lowAirTempDay");
+}
+// lowAirTempNight2
+BLYNK_WRITE(V59){
+  float a = param.asFloat();
+  obj1.setBorder("lowAirTempNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "lowAirTempNight");
+}
+// highAirTempDay2
+BLYNK_WRITE(V60){
+  float a = param.asFloat();
+  obj1.setBorder("highAirTempDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirTempDay");
+}
+// highAirTempNight2
+BLYNK_WRITE(V61){
+  float a = param.asFloat();
+  obj1.setBorder("highAirTempNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirTempNight");
+}
+// lightLevelDay2
+BLYNK_WRITE(V62){
+  float a = param.asFloat();
+  obj1.setBorder("lightLevelDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "lightLevelDay");
+}
+// lightLevelNight2
+BLYNK_WRITE(V63){
+  float a = param.asFloat();
+  obj1.setBorder("lightLevelNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "lightLevelNight");
+}
+
 
 void setup() {
   EEPROM.begin(40); // Init 40 bytes of EEPROM

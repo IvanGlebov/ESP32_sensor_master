@@ -102,20 +102,30 @@ class relay{
 };
 
 
-relay pump04_1 = relay(1, "Pump0.4Kv-1");
-relay pump04_2 = relay(2, "Pump0.4Kv-2");
-relay pump04_3 = relay(3, "Pump0.4Kv-3");
-relay valve_1 = relay(4, "Valve-1");
-relay valve_2 = relay(5, "Valve-2");
-relay light3_1 = relay(6, "Light3Kv-1");
-relay light1_1 = relay(7, "Light1Kv-1");
-relay light1_2 = relay(8, "Light1Kv-2");
-relay light01_1 = relay(9, "Light0.1KV-1");
-relay light01_2 = relay(10, "Light0.1Kv-2");
-relay distrif1_1 = relay(11, "Distrificator1Kv-1");
-relay distrif1_2 = relay(12, "Distrificator1Kv-1");
-relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1");
-relay siod1_1 = relay(14, "SIOD1Kv");
+
+
+relay pump04_1 = relay(1, "Pump0.4Kv-1"); // Помпа капельного полива
+
+relay valve1_1 = relay(4, "Valve1-1"); // Вентиль верхней аэрации блока 1
+relay valve1_2 = relay(5, "Valve1-2"); // Вентиль верхней аэрации блока 2
+
+relay valve2_1 = relay(4, "Valve2-1"); // Вентиль нижней аэрации блока 1
+relay valve2_2 = relay(5, "Valve2-2"); // Вентиль нижней аэрации блока 2
+
+relay light1_1 = relay(7, "Light1Kv-1"); // Основное освещение блока 1
+relay light1_2 = relay(8, "Light1Kv-2"); // Основное отвещение блока 2
+relay light01_1 = relay(9, "Light0.1KV-1"); // Длинный красный свет блока 1
+relay light01_2 = relay(10, "Light0.1Kv-2"); // Длинный красный свет блока 2
+relay distrif1_1 = relay(11, "Distrificator1Kv-1"); // Вентилятор 1
+relay distrif1_2 = relay(12, "Distrificator1Kv-1"); // Вентилятор 2
+
+relay heater1_1 = relay(13, "Hearet1Kv-1"); // Отопление 1
+relay heater1_2 = relay(14, "Heater1kv_2"); // Отопление 2
+
+relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1"); // Парогенератор 1
+relay steamgen1_2 = relay(13, "SteamGenerator1Kv-2"); // Парогенератор 2
+
+// relay siod1_1 = relay(14, "SIOD1Kv");
 
 
 // Функция для применения значений реле

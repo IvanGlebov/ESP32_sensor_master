@@ -476,40 +476,52 @@ class workObj{
     // Функция для сохранения всех значений границ в энергонезависимую память
 
     void saveBordersToEEPROM(int bordersGroup, String border){
-      if (border == "lowGroundHum")
-        EEPROM.write(0 + bordersGroup, borders[bordersGroup].lowGroundHum);
-      if (border == "highGroundHum")
-        EEPROM.write(1 + bordersGroup, borders[bordersGroup].highGroundHum);
-      if (border == "lowGroundTemp")
-        EEPROM.write(2 + bordersGroup, borders[bordersGroup].lowGroundTemp+40);
-      if (border == "highGroundTemp")
-        EEPROM.write(3 + bordersGroup, borders[bordersGroup].highGroundTemp+40);
-      if (border == "lowAirHum")
-        EEPROM.write(4 + bordersGroup, borders[bordersGroup].lowAirHum);
-      if (border == "highAirHum")
-        EEPROM.write(5 + bordersGroup, borders[bordersGroup].highAirHum);
-      if (border == "lowAirTemp")
-        EEPROM.write(6 + bordersGroup, borders[bordersGroup].lowAirTemp+40);
-      if (border == "highAirTemp")
-        EEPROM.write(7 + bordersGroup, borders[bordersGroup].highAirTemp+40);
-      if (border == "lowLightLevel")
-        EEPROM.write(8 + bordersGroup, borders[bordersGroup].lowLightLevel/10);
-      if (border == "highLightLevel")
-        EEPROM.write(9 + bordersGroup, borders[bordersGroup].highLightLevel/10);
+      if (border == "groundHumDay")
+        EEPROM.write(0 + bordersGroup, borders[bordersGroup].groundHumDay);
+      if (border == "groundHumNight")
+        EEPROM.write(1 + bordersGroup, borders[bordersGroup].groundHumNight);
+      if (border == "groundTempDay")
+        EEPROM.write(2 + bordersGroup, borders[bordersGroup].groundTempDay);
+      if (border == "groundTempNight")
+        EEPROM.write(3 + bordersGroup, borders[bordersGroup].groundTempNight);
+      if (border == "lowAirHumDay")
+        EEPROM.write(4 + bordersGroup, borders[bordersGroup].lowAirHumDay);
+      if (border == "lowAirHumNight")
+        EEPROM.write(5 + bordersGroup, borders[bordersGroup].lowAirHumNight);
+      if (border == "highAirHumDay")
+        EEPROM.write(6 + bordersGroup, borders[bordersGroup].highAirHumDay);
+      if (border == "highAirHumNight")
+        EEPROM.write(7 + bordersGroup, borders[bordersGroup].highAirHumNight);
+      if (border == "lowAirTempDay")
+        EEPROM.write(8 + bordersGroup, borders[bordersGroup].lowAirTempDay);
+      if (border == "lowAirTempNight")
+        EEPROM.write(9 + bordersGroup, borders[bordersGroup].lowAirTempNight);
+      if (border == "highAirTempDay")
+        EEPROM.write(10 + bordersGroup, borders[bordersGroup].highAirTempDay);
+      if (border == "highAirTempNight")
+        EEPROM.write(11 + bordersGroup, borders[bordersGroup].highAirTempNight);
+      if (border == "lightLevelDay")
+        EEPROM.write(12 + bordersGroup, borders[bordersGroup].lightLevelDay);
+      if (border == "lightLevelNight")
+        EEPROM.write(13 + bordersGroup, borders[bordersGroup].lightLevelNight);
       EEPROM.commit();
     }
     // Функция для чтения всех значений границ из энергонезависимой памяти
     void restoreBordersFromEEPROM(int bordersGroup){
-      borders[bordersGroup].lowGroundHum = (EEPROM.read(0 + bordersGroup) == 255) ? 0 : EEPROM.read(0 + bordersGroup);
-      borders[bordersGroup].highGroundHum = (EEPROM.read(1 + bordersGroup) == 255) ? 0 : EEPROM.read(1 + bordersGroup);
-      borders[bordersGroup].lowGroundTemp = (EEPROM.read(2 + bordersGroup) == 255) ? 0 : EEPROM.read(2 + bordersGroup)-40;
-      borders[bordersGroup].highGroundTemp = (EEPROM.read(3 + bordersGroup) == 255) ? 0 : EEPROM.read(3 + bordersGroup)-40;
-      borders[bordersGroup].lowAirHum = (EEPROM.read(4 + bordersGroup) == 255) ? 0 : EEPROM.read(4 + bordersGroup);
-      borders[bordersGroup].highAirHum = (EEPROM.read(5 + bordersGroup) == 255) ? 0 : EEPROM.read(5 + bordersGroup);
-      borders[bordersGroup].lowAirTemp = (EEPROM.read(6 + bordersGroup) == 255) ? 0 : EEPROM.read(6 + bordersGroup)-40;
-      borders[bordersGroup].highAirTemp = (EEPROM.read(7 + bordersGroup) == 255) ? 0 : EEPROM.read(7 + bordersGroup)-40;
-      borders[bordersGroup].lowLightLevel = (EEPROM.read(8 + bordersGroup) == 255) ? 0 : EEPROM.read(8 + bordersGroup)*10;
-      borders[bordersGroup].highLightLevel = (EEPROM.read(9 + bordersGroup) == 255) ? 0 : EEPROM.read(9 + bordersGroup)*10;
+      borders[bordersGroup].groundHumDay = (EEPROM.read(0 + bordersGroup) == 255) ? 0 : EEPROM.read(0 + bordersGroup);
+      borders[bordersGroup].groundHumNight = (EEPROM.read(1 + bordersGroup) == 255) ? 0 : EEPROM.read(1 + bordersGroup);
+      borders[bordersGroup].groundTempDay = (EEPROM.read(2 + bordersGroup) == 255) ? 0 : EEPROM.read(2 + bordersGroup);
+      borders[bordersGroup].groundTempNight = (EEPROM.read(3 + bordersGroup) == 255) ? 0 : EEPROM.read(3 + bordersGroup);
+      borders[bordersGroup].lowAirHumDay = (EEPROM.read(4 + bordersGroup) == 255) ? 0 : EEPROM.read(4 + bordersGroup);
+      borders[bordersGroup].lowAirHumNight = (EEPROM.read(5 + bordersGroup) == 255) ? 0 : EEPROM.read(5 + bordersGroup);
+      borders[bordersGroup].highAirHumDay = (EEPROM.read(6 + bordersGroup) == 255) ? 0 : EEPROM.read(6 + bordersGroup);
+      borders[bordersGroup].highAirHumNight = (EEPROM.read(7 + bordersGroup) == 255) ? 0 : EEPROM.read(7 + bordersGroup);
+      borders[bordersGroup].lowAirTempDay = (EEPROM.read(8 + bordersGroup) == 255) ? 0 : EEPROM.read(8 + bordersGroup);
+      borders[bordersGroup].lowAirTempNight = (EEPROM.read(9 + bordersGroup) == 255) ? 0 : EEPROM.read(9 + bordersGroup);
+      borders[bordersGroup].highAirTempDay = (EEPROM.read(10 + bordersGroup) == 255) ? 0 : EEPROM.read(10 + bordersGroup);
+      borders[bordersGroup].highAirTempNight = (EEPROM.read(11 + bordersGroup) == 255) ? 0 : EEPROM.read(11 + bordersGroup);
+      borders[bordersGroup].lightLevelDay = (EEPROM.read(12 + bordersGroup) == 255) ? 0 : EEPROM.read(12 + bordersGroup);
+      borders[bordersGroup].lightLevelNight = (EEPROM.read(13 + bordersGroup) == 255) ? 0 : EEPROM.read(13 + bordersGroup);
     }
     // Функция для смены режима финкционирования
     void changeModeTo(int changeToMode)
@@ -519,16 +531,21 @@ class workObj{
 
     void showBorders(int bordersGroup){
       Serial.println("-------------------------------------------");
-      Serial.println("LowGroundHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowGroundHum));
-      Serial.println("HighGroundHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].highGroundHum));
-      Serial.println("LowGroundTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowGroundTemp));
-      Serial.println("HighGroundTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].highGroundTemp));
-      Serial.println("LowAirHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirHum));
-      Serial.println("HighAirHum" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirHum));
-      Serial.println("LowAirTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirTemp));
-      Serial.println("HighAirTemp" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirTemp));
-      Serial.println("LowLightLeve" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowLightLevel));
-      Serial.println("HighLightLevel" + String(bordersGroup) + " :" + String(borders[bordersGroup].highLightLevel));
+      Serial.println("Group #" + String(bordersGroup));
+      Serial.println("groundHumDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].groundHumDay));
+      Serial.println("groundHumNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].groundHumNight));
+      Serial.println("groundTempDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].groundTempDay));
+      Serial.println("groundTempNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].groundTempNight));
+      Serial.println("lowAirHumDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirHumDay));
+      Serial.println("lowAirHumNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirHumNight));
+      Serial.println("highAirHumDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirHumDay));
+      Serial.println("highAirHumNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirHumNight));
+      Serial.println("lowAirTempDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirTempDay));
+      Serial.println("lowAirTempNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].lowAirTempNight));
+      Serial.println("highAirTempDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirTempDay));
+      Serial.println("highAirTempNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].highAirTempNight));
+      Serial.println("lightLevelDay" + String(bordersGroup) + " :" + String(borders[bordersGroup].lightLevelDay));
+      Serial.println("lightLevelNight" + String(bordersGroup) + " :" + String(borders[bordersGroup].lightLevelNight));
       Serial.println("-------------------------------------------");
     }
     int getMode(){ return mode; }
@@ -831,7 +848,7 @@ BLYNK_WRITE(V49){
 }
 
 void setup() {
-  EEPROM.begin(25); // Init 25 bytes of EEPROM
+  EEPROM.begin(40); // Init 40 bytes of EEPROM
   Wire.begin();        // Join I2C bus
   pcf_1.begin();       // Connect PCF8574_1 pin extension
   pcf_2.begin();       // Connect PCF8574_2 pin extension

@@ -187,48 +187,54 @@ class workObj{
     */
     void setBorder(String border, float value, int bordersGroup){
       
-      if (border == "lowGroundHum"){
-        borders[bordersGroup].lowGroundHum = value;
-      } else if (border == "highGroundHum"){
-        borders[bordersGroup].highGroundHum = value;
-      } else if (border == "lowGroundTemp"){
-        borders[bordersGroup].lowGroundTemp = value;
-      } else if (border == "highGroundTemp"){
-        borders[bordersGroup].highGroundTemp = value;
-      } else if (border == "lowAirHum"){
-        borders[bordersGroup].lowAirHum = value;
-      } else if (border == "highAirHum"){
-        borders[bordersGroup].highAirHum = value;
-      } else if (border == "lowAirTemp"){
-        borders[bordersGroup].lowAirTemp = value;
-      } else if (border == "highAirTemp"){
-        borders[bordersGroup].highAirTemp = value;
-      } else if (border == "lowLightLevel"){
-        borders[bordersGroup].lowLightLevel = value;
-      } else if (border == "highLightLevel"){
-        borders[bordersGroup].highLightLevel = value;
+      if (border == "groundHumDay"){
+        borders[bordersGroup].groundHumDay = value;
+      } else if (border == "groundHumNight"){
+        borders[bordersGroup].groundHumNight = value;
+      } else if (border == "groundTempDay"){
+        borders[bordersGroup].groundTempDay = value;
+      } else if (border == "groundTempNight"){
+        borders[bordersGroup].groundTempNight = value;
+      } else if (border == "lowAirHumDay"){
+        borders[bordersGroup].lowAirHumDay = value;
+      } else if (border == "lowAirHumNight"){
+        borders[bordersGroup].lowAirHumNight = value;
+      } else if (border == "highAirHumDay"){
+        borders[bordersGroup].highAirHumDay = value;
+      } else if (border == "highAirHumNight"){
+        borders[bordersGroup].highAirHumNight = value;
+      } else if (border == "lowAirTempDay"){
+        borders[bordersGroup].lowAirTempDay = value;
+      } else if (border == "lowAirTempNight"){
+        borders[bordersGroup].lowAirTempNight = value;
+      } else if (border == "highAirTempDay"){
+        borders[bordersGroup].highAirTempDay = value;
+      } else if (border == "highAirTempNight"){
+        borders[bordersGroup].highAirTempNight = value;
+      } else if (border == "lightLevelDay"){
+        borders[bordersGroup].lightLevelDay = value;
+      } else if (border == "lightLevelNight"){
+        borders[bordersGroup].lightLevelNight = value;
       }
 
     }
     // Функция для установки всех значений границ разом
-    void setAllBordersGroup(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
-                       float highGroundTemp, float lowAirHum, float highAirHum, 
-                       float lowAirTemp, float highAirTemp, float lowLightLevel, 
-                       float highLightLevel, int bordersGroup)
-    {
-    
-      borders[bordersGroup].lowGroundHum = lowGroundHum;
-      borders[bordersGroup].highGroundHum = highGroundHum;
-      borders[bordersGroup].lowGroundTemp = lowGroundTemp;
-      borders[bordersGroup].highGroundTemp = highGroundTemp;
-      borders[bordersGroup].lowAirHum = lowAirHum;
-      borders[bordersGroup].highAirHum = highAirHum;
-      borders[bordersGroup].lowAirTemp = lowAirTemp;
-      borders[bordersGroup].highAirTemp = highAirTemp;
-      borders[bordersGroup].lowLightLevel = lowLightLevel;
-      borders[bordersGroup].highLightLevel = highLightLevel;
-
-    }
+    // void setAllBordersGroup(float lowGroundHum, float highGroundHum, float lowGroundTemp, 
+    //                    float highGroundTemp, float lowAirHum, float highAirHum, 
+    //                    float lowAirTemp, float highAirTemp, float lowLightLevel, 
+    //                    float highLightLevel, int bordersGroup)
+    // {
+    //   borders[bordersGroup].lowGroundHum = lowGroundHum;
+    //   borders[bordersGroup].highGroundHum = highGroundHum;
+    //   borders[bordersGroup].lowGroundTemp = lowGroundTemp;
+    //   borders[bordersGroup].highGroundTemp = highGroundTemp;
+    //   borders[bordersGroup].lowAirHum = lowAirHum;
+    //   borders[bordersGroup].highAirHum = highAirHum;
+    //   borders[bordersGroup].lowAirTemp = lowAirTemp;
+    //   borders[bordersGroup].highAirTemp = highAirTemp;
+    //   borders[bordersGroup].lowLightLevel = lowLightLevel;
+    //   borders[bordersGroup].highLightLevel = highLightLevel;
+    // }
     
     // Функция для переключения состояний реле
     void useRelays() const {

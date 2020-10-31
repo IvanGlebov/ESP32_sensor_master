@@ -53,16 +53,20 @@ struct packetData{
 
 // Структура для хранения граничных значений для блоков сенсоров и автоматики
 struct borderValues{
-  float lowGroundHum;
-  float highGroundHum;
-  float lowGroundTemp;
-  float highGroundTemp;
-  float lowAirHum;
-  float highAirHum;
-  float lowAirTemp;
-  float highAirTemp;
-  float lowLightLevel;
-  float highLightLevel;
+  float groundHumDay;
+  float groundHumNight;
+  float groundTempDay;
+  float groundTempnight;
+  float lowAirHumDay;
+  float lowAirHumNight;
+  float highAirHumDay;
+  float highAirHumNight;
+  float lowAirTempDay;
+  float lowAirTempNight;
+  float highAirTempDay;
+  float highAirTempNight;
+  float lightLevelDay;
+  float lightLevelNight;
 };
 // Функция для сброса значений границ определённой структуры к стандартным(предустановленным)
 void dropBorders(borderValues &b1){

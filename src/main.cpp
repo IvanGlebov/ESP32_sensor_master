@@ -91,7 +91,6 @@ void dropBorders(borderValues &b1){
 // Класс описывающий одно конкретное реле
 class relay{
   private:
-    
     String name;
     bool state;
   public:

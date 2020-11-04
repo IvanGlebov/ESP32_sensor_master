@@ -111,24 +111,24 @@ class relay{
 
 relay pump04_1 = relay(1, "Pump0.4Kv-1"); // Помпа капельного полива
 
-relay valve1_1 = relay(4, "Valve1-1"); // Вентиль верхней аэрации блока 1
-relay valve1_2 = relay(5, "Valve1-2"); // Вентиль верхней аэрации блока 2
+relay valve1_1 = relay(2, "Valve1-1"); // Вентиль верхней аэрации блока 1
+relay valve1_2 = relay(3, "Valve1-2"); // Вентиль верхней аэрации блока 2
 
 relay valve2_1 = relay(4, "Valve2-1"); // Вентиль нижней аэрации блока 1
 relay valve2_2 = relay(5, "Valve2-2"); // Вентиль нижней аэрации блока 2
 
-relay light1_1 = relay(7, "Light1Kv-1"); // Основное освещение блока 1
-relay light1_2 = relay(8, "Light1Kv-2"); // Основное отвещение блока 2
-relay light01_1 = relay(9, "Light0.1KV-1"); // Длинный красный свет блока 1
-relay light01_2 = relay(10, "Light0.1Kv-2"); // Длинный красный свет блока 2
-relay distrif1_1 = relay(11, "Distrificator1Kv-1"); // Вентилятор 1
-relay distrif1_2 = relay(12, "Distrificator1Kv-1"); // Вентилятор 2
+relay light1_1 = relay(6, "Light1Kv-1"); // Основное освещение блока 1
+relay light1_2 = relay(7, "Light1Kv-2"); // Основное отвещение блока 2
+relay light01_1 = relay(8, "Light0.1KV-1"); // Длинный красный свет блока 1
+relay light01_2 = relay(9, "Light0.1Kv-2"); // Длинный красный свет блока 2
+relay distrif1_1 = relay(10, "Distrificator1Kv-1"); // Вентилятор 1
+relay distrif1_2 = relay(11, "Distrificator1Kv-1"); // Вентилятор 2
 
-relay steamgen1_1 = relay(13, "SteamGenerator1Kv-1"); // Парогенератор 1
+relay steamgen1_1 = relay(12, "SteamGenerator1Kv-1"); // Парогенератор 1
 relay steamgen1_2 = relay(13, "SteamGenerator1Kv-2"); // Парогенератор 2
 
-relay heater1_1 = relay(13, "Hearet1Kv-1"); // Отопление 1
-relay heater1_2 = relay(14, "Heater1kv_2"); // Отопление 2
+relay heater1_1 = relay(14, "Hearet1Kv-1"); // Отопление 1
+relay heater1_2 = relay(15, "Heater1kv_2"); // Отопление 2
 // relay siod1_1 = relay(14, "SIOD1Kv");
 
 
@@ -252,6 +252,8 @@ class workObj{
       setRelay(distrif1_2); // Вентиляция в блоке 2
       setRelay(steamgen1_1); // Увлажнитель в блоке 1
       setRelay(steamgen1_2); // Увлажнитель в блоке 2
+      setRelay(heater1_1);  // Отопрелние в блоке 1
+      setRelay(heater1_2);  // Отобление в блоке 2
     }
     
     // Функция для обработки автоматического полива
@@ -470,6 +472,7 @@ class workObj{
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
       
+        return returnFlag;
       }
     }
     // Функция для сохранения всех значений границ в энергонезависимую память
@@ -690,16 +693,20 @@ BLYNK_WRITE(V22){
 // Обогреватель блока 1
 BLYNK_WRITE(V23){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     heater1_1.setState( (a == 0)? true : false );
+    Serial.println("Heater 1 is now " + String(heater1_1.returnState()));
+  }
 }
 
 // Реле 15
 // Обогреватель блока 2
 BLYNK_WRITE(V24){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     heater1_2.setState( (a == 0)? true : false );
+    Serial.println("Heater 1 is now " + String(heater1_2.returnState()));
+  }
   
 }
 
@@ -909,7 +916,7 @@ void setup() {
   // Blynk.begin(auth, ssid, pass);
   Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
   // packetData data[slavesNumber]; 
-
+  
 }
 
 void loop() {
@@ -919,13 +926,17 @@ void loop() {
   // delay(1000);
   
   // obj1.showBorders(2);
+  heater1_1.printInfo();
+  heater1_2.printInfo();
   
   Blynk.run();  
   obj1.useRelays();
-  if (obj1.getMode() == automatic){
-    obj1.groundHumidControl();
-    obj1.lightSeparateControl();
-  }
+  // if (obj1.getMode() == automatic){
+    // obj1.airHumCheck();
+    // obj1.airTempCheck();
+  //   obj1.groundHumidControl();
+  //   obj1.lightSeparateControl();
+  // }
 
 }
 
@@ -973,12 +984,15 @@ void setRelay(relay r1){
           break;
         case 14:
           pcf_2.write(5, !r1.returnState());
+          Serial.println("pcf_2_p5 is now " + String(!r1.returnState()));
           break;
         case 15:
           pcf_2.write(6, !r1.returnState());
+          Serial.println("pcf_2_p6 is now " + String(!r1.returnState()));
           break;
         case 16:
           pcf_2.write(7, !r1.returnState());
+          Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
           break;
         default:
           // Serial.println("Error no such relay. Requered number :" + String(r1.number));

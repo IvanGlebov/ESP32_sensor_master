@@ -25,6 +25,7 @@ PCF8574 pcf_2(0x21);
 
 enum time {day, night};
 enum modes {automatic, manual, timeControlled, alert};
+enum lightModes {timed = 0, timed_level};
 // bool setFlag = false;
 
 /* virtual pins mapping
@@ -139,6 +140,7 @@ void callRelays();
 class workObj{
   private:
     int mode;
+    int lightModeMain1, lightModeMain2;
     int timeNow;
     packetData sensors1, sensors2, sensors3;
     borderValues borders[2];
@@ -529,7 +531,17 @@ class workObj{
     {
       mode = changeToMode;
     }
+    // Функция для смены режима работы основного освещения в разных блоках
+    void changeMainLightMode(int toMode, int block){
+      if (block == 1){
+        obj1.lightModeMain1 = toMode;
+      }
+      if (block == 2){
+        obj1.lightModeMain2 = toMode;
+      }
+    }
 
+    // Функция для вывода в кончоль всех граничных значений
     void showBorders(int bordersGroup){
       Serial.println("-------------------------------------------");
       Serial.println("Group #" + String(bordersGroup));
@@ -550,7 +562,12 @@ class workObj{
       Serial.println("-------------------------------------------");
     }
     int getMode(){ return mode; }
+    int getMainLightMode(int block){
+      if (block == 1) return lightModeMain1;
+      if (block == 2) return lightModeMain2;
+    }
 };
+
 // Прототип функции разбора пакета данных с блока сенсоров
 void parsePackage(packetData&, String);
 // Прототип функции отображения данных пакета в консоль
@@ -903,6 +920,50 @@ BLYNK_WRITE(V63){
   obj1.saveBordersToEEPROM(2, "lightLevelNight");
 }
 
+// Режимы основного освещения блока 1
+BLYNK_WRITE(V2){
+  int a = param.asInt();
+  // Записываем новое значение режима
+  obj1.changeMainLightMode(a, 1);
+}
+
+// Режимы основного освещения блока 2
+BLYNK_WRITE(V3){
+  int a = param.asInt();
+  // Записываем новое значение режима
+  obj1.changeMainLightMode(a, 2);
+}
+
+// Таймер для режима 1 основного освещения блока 1
+BLYNK_WRITE(V4){
+  int a = param.asInt();
+  // Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
+  if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
+    if (a == 1){
+      light1_1.on();
+    }
+    if (a == 0){
+      light1_1.off();
+    }
+    
+  }
+}
+
+// Таймер для режима 1 основного освещения блока 2
+BLYNK_WRITE(V5){
+  int a = param.asInt();
+  // Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
+  if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(2) == timed)){
+    if (a == 1){
+      light1_2.on();
+    }
+    if (a == 0){
+      light1_2.off();
+    }
+    
+  }
+}
+
 
 void setup() {
   EEPROM.begin(40); // Init 40 bytes of EEPROM
@@ -925,8 +986,8 @@ void loop() {
   // delay(1000);
   
   // obj1.showBorders(2);
-  heater1_1.printInfo();
-  heater1_2.printInfo();
+  // heater1_1.printInfo();
+  // heater1_2.printInfo();
   
   Blynk.run();  
   obj1.useRelays();

@@ -30,9 +30,9 @@ PCF8574 pcf_2(0x21);
 #define slavesNumber 1
 #define debug true
 
-enum time {day, night};
+enum time { dayTime, night};
 enum modes {automatic, manual, timeControlled, alert};
-enum lightModes {timed = 0, timed_level};
+enum lightModes {timed = 0, timed_with_light_level};
 // bool setFlag = false;
 
 /* virtual pins mapping
@@ -99,17 +99,19 @@ void dropBorders(borderValues &b1){
 // Класс описывающий одно конкретное реле
 class relay{
   private:
-    String name;
+    
     bool state;
   public:
     int number;
+    String name;
+
     relay(int setNumber, String relayName) {number = setNumber; name = relayName;};
     relay(int setNumber, String relayName, bool defaultState) { number = setNumber; name = relayName; state = defaultState; };
     void setBindpin(int setNumber){ number = setNumber; }
     void setState(bool newState){ state  = newState; }
     void printInfo(){ Serial.println("Relay with name " + name + " on pin " + String(number) + " is " + (state)? String(true) : String(false)); }
-    void on(){ state = true; }
-    void off(){ state = false; }
+    void on(){ state = true;  }
+    void off(){ state = false;  }
     bool returnState(){ return state; }
 };
 
@@ -148,10 +150,20 @@ class workObj{
   private:
     int mode;
     int lightModeMain1, lightModeMain2;
-    int timeNow;
+    long mainLightOn_1, mainLightOn_2;
+    long mainLightOff_1, mainLightOff_2;
+    long aerTopStartTime_1, aerTopStartTime_2; // Точка отсчёта верхней аэрации обоих блоков
+    long aerDownStartTime_1, aerDownStartTime_2; // Точка отсчёта нижней аэрации обоих блоков
+    
+    int timeNow; // Текущее время в секундах с начала дня. Время тянется с Blynk
     packetData sensors1, sensors2, sensors3;
     borderValues borders[2];
   public:
+
+    int airTempFlag, airHumFlag; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
+
+    int n1_1, n1_2, m1_1, m1_2; // Длительность включения и выключения верхней и нижней аэрации в блоке 1
+    int n2_1, n2_2, m2_1, m2_2; // Длительность включения и выключения верхней и нижней аэрации в блоке 2
     // If setAllDefaultFlag is false - border values will be recovered from EEPROM
     // Modes - automatic(0), manual(1), timeConrolled(2), alert(3)
     workObj(int startMode, bool setAllDefaultFlag) : mode(startMode) {
@@ -168,8 +180,48 @@ class workObj{
 
 
     }
+    
+    // Запись времени старта отсчёта работы
+    void setAerTime(String position, int block, long startTime){
+      if (position == "top"){
+        if (block == 1){
+          aerTopStartTime_1 = startTime;
+        }
+        if (block == 2){
+          aerTopStartTime_2 = startTime;
+        }
+      }
+      if (position == "down"){
+        if (block == 1){
+          aerDownStartTime_1 = startTime;
+        }
+        if (block == 2){
+          aerDownStartTime_2 = startTime;
+        }
+      }
+    }
 
+    // Flags
+    // start / end 
+    void setMainLightTime(String timeType, int block, long timeValue){
+      if (timeType == "start"){
+        if (block == 1){
+          mainLightOn_1 = timeValue;
+        }
+        if (block == 2){
+          mainLightOn_2 = timeValue;
+        }
+      }
+      if (timeType == "end"){
+        if (block == 1){
+          mainLightOff_1 = timeValue;
+        }
+        if (block == 2){
+          mainLightOff_2 = timeValue;
+        }
+      }
 
+    }
     // Функция для записи данных с сенсоров
     void setSensorsData(packetData d1, int n) { 
       switch(n){
@@ -244,7 +296,7 @@ class workObj{
     // }
     
     // Функция для переключения состояний реле
-    void useRelays() const {
+    void useRelays() {
       // Relays are working in inverted mode - 0 is ON, 1 is OFF
       setRelay(pump04_1); // Помпа капельного полива. Общая на 2 блока
       setRelay(valve1_1); // Вентиль верхней аэрации блока 1
@@ -261,7 +313,7 @@ class workObj{
       setRelay(steamgen1_1); // Увлажнитель в блоке 1
       setRelay(steamgen1_2); // Увлажнитель в блоке 2
       setRelay(heater1_1);  // Отопрелние в блоке 1
-      setRelay(heater1_2);  // Отобление в блоке 2
+      // setRelay(heater1_2);  // Отобление в блоке 2
     }
     
     // Функция для обработки автоматического полива
@@ -292,7 +344,7 @@ class workObj{
       int returnFlag = 0;
       
       // Если сейчас днейной режим, то используем дневные границы
-      if (timeNow == day){
+      if (timeNow == dayTime){
         // Нагрев если маленькая температура
         // Блок 1
         if (sensors1.airTemp < borders[0].lowAirTempDay){
@@ -320,7 +372,7 @@ class workObj{
           distrif1_1.on();
           returnFlag = 1;
         } // Если вентиляция не занята другой функцией, то выключаем её
-        else if (airHumCheck() != 1){
+        else if (airHumFlag != 1){
           distrif1_1.off();
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
@@ -329,7 +381,7 @@ class workObj{
           distrif1_2.on();
           returnFlag = 1;
         } // Если вентиляция не занята другой функцией, то выключаем её
-        else if (airHumCheck() != 1) {
+        else if (airHumFlag != 1) {
           distrif1_2.off();
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
@@ -364,7 +416,7 @@ class workObj{
           distrif1_1.on();
           returnFlag = 1;
         }
-        else if (airHumCheck() != 1) {
+        else if (airHumFlag != 1) {
           distrif1_1.off();
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
@@ -373,7 +425,7 @@ class workObj{
           distrif1_2.on();
           returnFlag = 1;
         }
-        else if (airHumCheck() != 1) {
+        else if (airHumFlag != 1) {
           distrif1_2.off();
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
@@ -388,8 +440,10 @@ class workObj{
       // Переменная для хранения состояния условий. Если возвращается "1", то активно каоке-то условие и выключать не надо
       // если возвращается "0", то с устройсовом исполнителем можно взаимодействовать спокойно
       int returnFlag = 0;
+
+      // timeNow = dayTime;
       // Если сейчас днейной режим, то используем дневные границы
-      if (timeNow == day){
+      if (timeNow == dayTime){
         // Если низкая влажность, то включить парогенератор
         // Блок 1
         if (sensors1.airHum < borders[0].lowAirHumDay){
@@ -410,25 +464,31 @@ class workObj{
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
 
+
         // Если высокая влажность, то включить вентиляцию. Если влажность вернулась в норму и другое устройство не задействует 
         // исполнитель, то выключить вентиляцию
         // Блок 1
+
+        // ТУТ БЛЯДСКАЯ ОШИБКА УБИВАЮЩАЯ ПРОЦЕСС
+        // пофикшено :)
+        // sensors1.airHum = 20;
         if (sensors1.airHum > borders[0].highAirHumDay){
           distrif1_1.on();
           returnFlag = 1;
+          // Serial.println("AirTempCheck : " + String(airTempFlag));
         }
-        else if (airTempCheck() != 1) {
+        else if (airTempFlag != 1) {
           distrif1_1.off();
           // Если возвращаемое значение уже успело стать равным 1, то не надо его обнулять и ломать логику.
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-          // 
+          // returnFlag = (returnFlag == 1) ? 1 : 0;
+          
         }
         // Блок 2
         if (sensors2.airHum > borders[1].highAirHumDay){
           distrif1_2.on();
           returnFlag = 1;
         } 
-        else if (airTempCheck() != 1){
+        else if (airTempFlag != 1){
           distrif1_2.off();
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
@@ -464,7 +524,7 @@ class workObj{
           distrif1_1.on();
           returnFlag = 1;
         }
-        else if (airTempCheck() != 1) {
+        else if (airTempFlag != 1) {
           distrif1_1.off();
           // Если возвращаемое значение уже успело стать равным 1, то не надо его обнулять и ломать логику.
           returnFlag = (returnFlag == 1) ? 1 : 0;
@@ -475,45 +535,47 @@ class workObj{
           distrif1_2.on();
           returnFlag = 1;
         } 
-        else if (airTempCheck() != 1){
+        else if (airTempFlag != 1){
           distrif1_2.off();
           returnFlag = (returnFlag == 1) ? 1 : 0;
         }
       
         return returnFlag;
       }
+      
+
     }
     // Функция для сохранения всех значений границ в энергонезависимую память
 
     void saveBordersToEEPROM(int bordersGroup, String border){
       if (border == "groundHumDay")
-        EEPROM.write(0 + bordersGroup, borders[bordersGroup].groundHumDay);
+        EEPROM.write(0 * bordersGroup-1, borders[bordersGroup].groundHumDay);
       if (border == "groundHumNight")
-        EEPROM.write(1 + bordersGroup, borders[bordersGroup].groundHumNight);
+        EEPROM.write(1 * bordersGroup-1, borders[bordersGroup].groundHumNight);
       if (border == "groundTempDay")
-        EEPROM.write(2 + bordersGroup, borders[bordersGroup].groundTempDay);
+        EEPROM.write(2 * bordersGroup-1, borders[bordersGroup].groundTempDay);
       if (border == "groundTempNight")
-        EEPROM.write(3 + bordersGroup, borders[bordersGroup].groundTempNight);
+        EEPROM.write(3 * bordersGroup-1, borders[bordersGroup].groundTempNight);
       if (border == "lowAirHumDay")
-        EEPROM.write(4 + bordersGroup, borders[bordersGroup].lowAirHumDay);
+        EEPROM.write(4 * bordersGroup-1, borders[bordersGroup].lowAirHumDay);
       if (border == "lowAirHumNight")
-        EEPROM.write(5 + bordersGroup, borders[bordersGroup].lowAirHumNight);
+        EEPROM.write(5 * bordersGroup-1, borders[bordersGroup].lowAirHumNight);
       if (border == "highAirHumDay")
-        EEPROM.write(6 + bordersGroup, borders[bordersGroup].highAirHumDay);
+        EEPROM.write(6 * bordersGroup-1, borders[bordersGroup].highAirHumDay);
       if (border == "highAirHumNight")
-        EEPROM.write(7 + bordersGroup, borders[bordersGroup].highAirHumNight);
+        EEPROM.write(7 * bordersGroup-1, borders[bordersGroup].highAirHumNight);
       if (border == "lowAirTempDay")
-        EEPROM.write(8 + bordersGroup, borders[bordersGroup].lowAirTempDay);
+        EEPROM.write(8 * bordersGroup-1, borders[bordersGroup].lowAirTempDay);
       if (border == "lowAirTempNight")
-        EEPROM.write(9 + bordersGroup, borders[bordersGroup].lowAirTempNight);
+        EEPROM.write(9 * bordersGroup-1, borders[bordersGroup].lowAirTempNight);
       if (border == "highAirTempDay")
-        EEPROM.write(10 + bordersGroup, borders[bordersGroup].highAirTempDay);
+        EEPROM.write(10 * bordersGroup-1, borders[bordersGroup].highAirTempDay);
       if (border == "highAirTempNight")
-        EEPROM.write(11 + bordersGroup, borders[bordersGroup].highAirTempNight);
+        EEPROM.write(11 * bordersGroup-1, borders[bordersGroup].highAirTempNight);
       if (border == "lightLevelDay")
-        EEPROM.write(12 + bordersGroup, borders[bordersGroup].lightLevelDay);
+        EEPROM.write(12 * bordersGroup-1, borders[bordersGroup].lightLevelDay);
       if (border == "lightLevelNight")
-        EEPROM.write(13 + bordersGroup, borders[bordersGroup].lightLevelNight);
+        EEPROM.write(13 * bordersGroup-1, borders[bordersGroup].lightLevelNight);
       EEPROM.commit();
     }
     // Функция для чтения всех значений границ из энергонезависимой памяти
@@ -541,10 +603,10 @@ class workObj{
     // Функция для смены режима работы основного освещения в разных блоках
     void changeMainLightMode(int toMode, int block){
       if (block == 1){
-        obj1.lightModeMain1 = toMode;
+        lightModeMain1 = toMode;
       }
       if (block == 2){
-        obj1.lightModeMain2 = toMode;
+        lightModeMain2 = toMode;
       }
     }
 
@@ -573,6 +635,33 @@ class workObj{
       if (block == 1) return lightModeMain1;
       if (block == 2) return lightModeMain2;
     }
+    // Функция для обновления переменной времени тянущейся с Blynk
+    void calculateTimeBlynk(){
+      timeNow = hour()*3600 + minute()*60 + second();
+    }
+    // Функция для получения значения переменной времени Blynk
+    long getTimeBlynk(){
+      return timeNow;
+    }
+    long getMainLightTime(String timeType, int block){
+      if (timeType == "start"){
+        if (block == 1){
+          return mainLightOn_1;
+        }
+        if (block == 2){
+          return mainLightOn_2;
+        }
+      }
+      if (timeType == "end"){
+        if (block == 1){
+          return mainLightOff_1;
+        }
+        if (block == 2){
+          return mainLightOff_2;
+        }
+      }
+    }
+
 };
 
 // Прототип функции разбора пакета данных с блока сенсоров
@@ -586,8 +675,11 @@ void slavesQuery();
 workObj obj1(1, false);
 
 
+WidgetRTC rtcBlynk;
 
-
+BLYNK_CONNECTED() {
+  rtcBlynk.begin();
+}
 
 //  000000  000000  00        00    00   00   00000
 //  00  00  00      00       0  0    00 00   00
@@ -728,7 +820,7 @@ BLYNK_WRITE(V24){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     heater1_2.setState( (a == 0)? true : false );
-    Serial.println("Heater 1 is now " + String(heater1_2.returnState()));
+    Serial.println("Heater 2 is now " + String(heater1_2.returnState()));
   }
   
 }
@@ -927,6 +1019,11 @@ BLYNK_WRITE(V63){
   obj1.saveBordersToEEPROM(2, "lightLevelNight");
 }
 
+
+
+
+
+
 // Режимы основного освещения блока 1
 BLYNK_WRITE(V2){
   int a = param.asInt();
@@ -941,23 +1038,36 @@ BLYNK_WRITE(V3){
   obj1.changeMainLightMode(a, 2);
 }
 
-// Таймер для режима 1 основного освещения блока 1
+// Время включения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V4){
+  // obj1.setMainLightTime("start", 1, param[0].asLong()); // Время старта
+  // if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
+  //   if (obj1.getTimeBlynk() == obj1.getMainLightTime("start", 1)){
+      // light1_1.on();
+    // }
+  // }// Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
+  
   int a = param.asInt();
-  // Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
   if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
     if (a == 1){
       light1_1.on();
+      Serial.println("Main light 1 on");
     }
-    if (a == 0){
-      light1_1.off();
-    }
+    // if (a == 0){
+      // light1_1.off();
+    // }
     
   }
 }
 
-// Таймер для режима 1 основного освещения блока 2
+// Время выключения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V5){
+  obj1.setMainLightTime("end", 1, param[0].asLong());
+
+
+}
+// Таймер для режима 1 основного освещения блока 2
+BLYNK_WRITE(V6){
   int a = param.asInt();
   // Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
   if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(2) == timed)){
@@ -1059,12 +1169,12 @@ void loop() {
   
   Blynk.run();  
   obj1.useRelays();
-  // if (obj1.getMode() == automatic){
-    // obj1.airHumCheck();
-    // obj1.airTempCheck();
-  //   obj1.groundHumidControl();
-  //   obj1.lightSeparateControl();
-  // }
+  if (obj1.getMode() == automatic){
+    obj1.airHumFlag = obj1.airHumCheck();
+    obj1.airTempFlag = obj1.airTempCheck();
+    // obj1.groundHumidControl();
+    // obj1.lightSeparateControl();
+  }
 
 }
 
@@ -1112,7 +1222,7 @@ void setRelay(relay r1){
           break;
         case 14:
           pcf_2.write(5, !r1.returnState());
-          Serial.println("pcf_2_p5 is now " + String(!r1.returnState()));
+          // Serial.println("pcf_2_p5 is now " + String(!r1.returnState()));
           break;
         case 15:
           pcf_2.write(6, !r1.returnState());
@@ -1123,7 +1233,7 @@ void setRelay(relay r1){
           Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
           break;
         default:
-          // Serial.println("Error no such relay. Requered number :" + String(r1.number));
+          Serial.println("Error no such relay. Requered number :" + String(r1.number));
           break;
       }
 }

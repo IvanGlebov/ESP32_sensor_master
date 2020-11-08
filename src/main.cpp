@@ -7,9 +7,16 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
+#include <TimeLib.h>
+#include <WidgetRTC.h>
 #include <Wire.h>
 #include <EEPROM.h>
 #include "PCF8574.h"
+
+
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+
 // home
 // Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84
 // rwuSDq5orOfSV8nF75xsQT7YSR_e2Xqf
@@ -965,8 +972,68 @@ BLYNK_WRITE(V5){
 }
 
 
+
+// Точка отсчёта верхней аэрации блока 1
+BLYNK_WRITE(V44){
+  obj1.setAerTime("top", 1, param.asLong());
+}
+// Верхняя аэрация блока 1 n
+BLYNK_WRITE(V45){
+  obj1.n1_1 = param.asInt();
+}
+// Верхняя аэрация блока 1 m
+BLYNK_WRITE(V46){
+  obj1.m1_1 = param.asInt();
+}
+// Точка отсчёта нижней аэрации блока 1
+BLYNK_WRITE(V47){
+  obj1.setAerTime("down", 1, param.asLong());
+}
+// Нижняя аэрация блока 1 n
+BLYNK_WRITE(V48){
+  obj1.n1_2 = param.asInt();
+}
+// Нижняя аэрация блока 1 m
+BLYNK_WRITE(V49){
+  obj1.m1_2 = param.asInt();
+}
+
+
+// Точка отсчёта верхней аэрации блока 2
+BLYNK_WRITE(V64){
+  obj1.setAerTime("top", 2, param.asLong());
+}
+// Верхняя аэрация блока 2 n
+BLYNK_WRITE(V65){
+  obj1.n2_1 = param.asInt();
+}
+// Верхняя аэрация блока 2 m
+BLYNK_WRITE(V66){
+  obj1.m2_1 = param.asInt();
+}
+// Точка отсчёта нижней аэрации блока 2
+BLYNK_WRITE(V67){
+  obj1.setAerTime("down", 2, param.asLong());
+}
+// Нижняя аэрация блока 2 n
+BLYNK_WRITE(V68){
+  obj1.n2_2 = param.asInt();
+}
+// Нижняя аэрация блока 2 m
+BLYNK_WRITE(V69){
+  obj1.m2_2 = param.asInt();
+}
+
+
 void setup() {
-  EEPROM.begin(40); // Init 40 bytes of EEPROM
+  // Очень плохое решение проблемы проседания питания при старте WiFi
+  // Но другого у меня нет. Так что будет пока так.
+  // Хорошо бы сделать отдельное питание на 3.3 линию в 3.4В
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
+
+
+  EEPROM.begin(30); // Init 30 bytes of EEPROM
   Wire.begin();        // Join I2C bus
   pcf_1.begin();       // Connect PCF8574_1 pin extension
   pcf_2.begin();       // Connect PCF8574_2 pin extension
@@ -974,6 +1041,7 @@ void setup() {
   obj1.restoreBordersFromEEPROM(1);
   obj1.restoreBordersFromEEPROM(2);
   // Blynk.begin(auth, ssid, pass);
+  setSyncInterval(10 * 60); // Для виджета часов реального времени
   Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
   // packetData data[slavesNumber]; 
   

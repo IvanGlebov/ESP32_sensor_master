@@ -325,11 +325,7 @@ class workObj{
       
     }
     // Функция для автоматической обработки автоматики отдельных блоков
-    void lightSeparateControl(){
-      
-
-  
-    }
+    void lightControl();
 
     // Функция для включения или выключения полива отдельного блока
 
@@ -667,6 +663,40 @@ class workObj{
     }
 
 };
+
+
+void workObj::lightControl() {
+  
+  if (getMode() == automatic){
+    // Режим 1 Блока 1
+    if (getMainLightMode(1) == timed){
+      // Включение освещения по времени
+      if (getTimeBlynk() == getMainLightTime("start", 1)){
+        light1_1.on();
+      }
+      // Выключение освещения по времени
+      if (getTimeBlynk() == getMainLightTime("end", 1)){
+        light1_1. off();
+      }
+    }
+    // Режим 1 блока 2
+    if (getMainLightMode(2) == timed){
+      // Включение освещения по времени
+      if (getTimeBlynk() == getMainLightTime("start", 2)){
+        light1_2.on();
+      }
+      // Выключение освещения по времени
+      if (getTimeBlynk() == getMainLightTime("end", 2)){
+        light1_2.off();
+      }
+    }
+  
+  }
+
+
+
+}
+
 
 // Прототип функции разбора пакета данных с блока сенсоров
 void parsePackage(packetData&, String);
@@ -1044,19 +1074,16 @@ BLYNK_WRITE(V3){
 
 // Время включения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V4){
-  // obj1.setMainLightTime("start", 1, param[0].asLong()); // Время старта
-  // if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
-  //   if (obj1.getTimeBlynk() == obj1.getMainLightTime("start", 1)){
-      // light1_1.on();
-    // }
-  // }// Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
+
+  obj1.setMainLightTime("start", 1, param[0].asLong()); // Время старта
+  }// Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
   
-  int a = param.asInt();
-  if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
-    if (a == 1){
-      light1_1.on();
-      Serial.println("Main light 1 on");
-    }
+  // int a = param.asInt();
+  // if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
+    // if (a == 1){
+      // light1_1.on();
+      // Serial.println("Main light 1 on");
+    // }
     // if (a == 0){
       // light1_1.off();
     // }
@@ -1067,7 +1094,11 @@ BLYNK_WRITE(V4){
 // Время выключения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V5){
   obj1.setMainLightTime("end", 1, param[0].asLong());
-
+  if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
+    if (obj1.getTimeBlynk() == obj1.getMainLightTime("end", 2)){
+      light1_1.off();
+    }
+  }
 
 }
 // Таймер для режима 1 основного освещения блока 2

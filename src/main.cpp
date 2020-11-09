@@ -101,43 +101,47 @@ class relay{
   private:
     
     bool state;
+    int virtualPin;
   public:
     int number;
     String name;
 
+
     relay(int setNumber, String relayName) {number = setNumber; name = relayName;};
     relay(int setNumber, String relayName, bool defaultState) { number = setNumber; name = relayName; state = defaultState; };
+    relay(int setNumber, String relayName, int virtualPinNumber) { number = setNumber, name = relayName, virtualPin = virtualPinNumber; };
     void setBindpin(int setNumber){ number = setNumber; }
     void setState(bool newState){ state  = newState; }
     void printInfo(){ Serial.println("Relay with name " + name + " on pin " + String(number) + " is " + (state)? String(true) : String(false)); }
     void on(){ state = true;  }
     void off(){ state = false;  }
     bool returnState(){ return state; }
+    int getVPinNumber(){ return virtualPin; }
 };
 
 
 
 
-relay pump04_1 = relay(1, "Pump0.4Kv-1"); // Помпа капельного полива
+relay pump04_1 = relay(1, "Pump0.4Kv-1", 10); // Помпа капельного полива
 
-relay valve1_1 = relay(2, "Valve1-1"); // Вентиль верхней аэрации блока 1
-relay valve1_2 = relay(3, "Valve1-2"); // Вентиль верхней аэрации блока 2
+relay valve1_1 = relay(2, "Valve1-1", 11); // Вентиль верхней аэрации блока 1
+relay valve1_2 = relay(3, "Valve1-2", 12); // Вентиль верхней аэрации блока 2
 
-relay valve2_1 = relay(4, "Valve2-1"); // Вентиль нижней аэрации блока 1
-relay valve2_2 = relay(5, "Valve2-2"); // Вентиль нижней аэрации блока 2
+relay valve2_1 = relay(4, "Valve2-1", 13); // Вентиль нижней аэрации блока 1
+relay valve2_2 = relay(5, "Valve2-2", 14); // Вентиль нижней аэрации блока 2
 
-relay light1_1 = relay(6, "Light1Kv-1"); // Основное освещение блока 1
-relay light1_2 = relay(7, "Light1Kv-2"); // Основное отвещение блока 2
-relay light01_1 = relay(8, "Light0.1KV-1"); // Длинный красный свет блока 1
-relay light01_2 = relay(9, "Light0.1Kv-2"); // Длинный красный свет блока 2
-relay distrif1_1 = relay(10, "Distrificator1Kv-1"); // Вентилятор 1
-relay distrif1_2 = relay(11, "Distrificator1Kv-1"); // Вентилятор 2
+relay light1_1 = relay(6, "Light1Kv-1", 15); // Основное освещение блока 1
+relay light1_2 = relay(7, "Light1Kv-2", 16); // Основное отвещение блока 2
+relay light01_1 = relay(8, "Light0.1KV-1", 17); // Длинный красный свет блока 1
+relay light01_2 = relay(9, "Light0.1Kv-2", 18); // Длинный красный свет блока 2
+relay distrif1_1 = relay(10, "Distrificator1Kv-1", 19); // Вентилятор 1
+relay distrif1_2 = relay(11, "Distrificator1Kv-1", 20); // Вентилятор 2
 
-relay steamgen1_1 = relay(12, "SteamGenerator1Kv-1"); // Парогенератор 1
-relay steamgen1_2 = relay(13, "SteamGenerator1Kv-2"); // Парогенератор 2
+relay steamgen1_1 = relay(12, "SteamGenerator1Kv-1", 21); // Парогенератор 1
+relay steamgen1_2 = relay(13, "SteamGenerator1Kv-2", 22); // Парогенератор 2
 
-relay heater1_1 = relay(14, "Hearet1Kv-1"); // Отопление 1
-relay heater1_2 = relay(15, "Heater1kv_2"); // Отопление 2
+relay heater1_1 = relay(14, "Hearet1Kv-1", 23); // Отопление 1
+relay heater1_2 = relay(15, "Heater1kv_2", 24); // Отопление 2
 // relay siod1_1 = relay(14, "SIOD1Kv");
 
 
@@ -1180,62 +1184,64 @@ void loop() {
 
 // Функция для применения значения реле по его номеру
 void setRelay(relay r1){
-      switch(r1.number){
-        case 1:
-          pcf_1.write(0, !r1.returnState());
-          break;
-        case 2:
-          pcf_1.write(1, !r1.returnState());
-          break;
-        case 3:
-          pcf_1.write(2, !r1.returnState());
-          break;
-        case 4:
-          pcf_1.write(3, !r1.returnState());
-          break;
-        case 5:
-          pcf_1.write(4, !r1.returnState());
-          break;
-        case 6:
-          pcf_1.write(5, !r1.returnState());
-          break;
-        case 7:
-          pcf_1.write(6, !r1.returnState());
-          break;
-        case 8:
-          pcf_1.write(7, !r1.returnState());
-          break;
-        case 9:
-          pcf_2.write(0, !r1.returnState());
-          break;
-        case 10:
-          pcf_2.write(1, !r1.returnState());
-          break;
-        case 11:
-          pcf_2.write(2, !r1.returnState());
-          break;
-        case 12:
-          pcf_2.write(3, !r1.returnState());
-          break;
-        case 13:
-          pcf_2.write(4, !r1.returnState());
-          break;
-        case 14:
-          pcf_2.write(5, !r1.returnState());
-          // Serial.println("pcf_2_p5 is now " + String(!r1.returnState()));
-          break;
-        case 15:
-          pcf_2.write(6, !r1.returnState());
-          Serial.println("pcf_2_p6 is now " + String(!r1.returnState()));
-          break;
-        case 16:
-          pcf_2.write(7, !r1.returnState());
-          Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
-          break;
-        default:
-          Serial.println("Error no such relay. Requered number :" + String(r1.number));
-          break;
-      }
+  switch(r1.number){
+    case 1:
+      pcf_1.write(0, !r1.returnState());
+      break;
+    case 2:
+      pcf_1.write(1, !r1.returnState());
+      break;
+    case 3:
+      pcf_1.write(2, !r1.returnState());
+      break;
+    case 4:
+      pcf_1.write(3, !r1.returnState());
+      break;
+    case 5:
+      pcf_1.write(4, !r1.returnState());
+      break;
+    case 6:
+      pcf_1.write(5, !r1.returnState());
+      break;
+    case 7:
+      pcf_1.write(6, !r1.returnState());
+      break;
+    case 8:
+      pcf_1.write(7, !r1.returnState());
+      break;
+    case 9:
+      pcf_2.write(0, !r1.returnState());
+      break;
+    case 10:
+      pcf_2.write(1, !r1.returnState());
+      break;
+    case 11:
+      pcf_2.write(2, !r1.returnState());
+      break;
+    case 12:
+      pcf_2.write(3, !r1.returnState());
+      break;
+    case 13:
+      pcf_2.write(4, !r1.returnState());
+      break;
+    case 14:
+      pcf_2.write(5, !r1.returnState());
+      // Serial.println("pcf_2_p5 is now " + String(!r1.returnState()));
+      break;
+    case 15:
+      pcf_2.write(6, !r1.returnState());
+      Serial.println("pcf_2_p6 is now " + String(!r1.returnState()));
+      break;
+    case 16:
+      pcf_2.write(7, !r1.returnState());
+      Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
+      break;
+    default:
+      Serial.println("Error no such relay. Requered number :" + String(r1.number));
+      break;
+  }
+  // Отправка значения об изменении состояния реле.
+  Blynk.virtualWrite(r1.getVPinNumber(), r1.returnState()); 
 }
 
 

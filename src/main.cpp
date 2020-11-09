@@ -32,7 +32,12 @@ PCF8574 pcf_2(0x21);
 
 enum time { dayTime, night};
 enum modes {automatic, manual, timeControlled, alert};
-enum lightModes {timed = 0, timed_with_light_level};
+enum lightModes {timed = 1, timed_with_light_level};
+bool firstConnectedFlag = true;
+long timerEEPROM = 0;
+long delayForEEPROM = 2000; // Длительность между записью данных 
+                            // режмов в EEPROM в 'мс' 
+bool saveFlag = false;
 // bool setFlag = false;
 
 /* virtual pins mapping
@@ -44,7 +49,7 @@ V25 - relay16 control
 */
 
 
-
+BlynkTimer eeprom;
 
 
 // Structure for packet variables saving
@@ -152,19 +157,26 @@ void callRelays();
 
 class workObj{
   private:
-    int mode;
-    int lightModeMain1, lightModeMain2;
-    long mainLightOn_1, mainLightOn_2;
-    long mainLightOff_1, mainLightOff_2;
+    int mode;  // Режим работы
+    int redLightDuration_1, redLightDuration_2; // Длительность досветки дальним красным
+    int redLightMode_1, redLightMode_2; // Режим работы красной досветки
+    int lightModeMain1, lightModeMain2;  // Режимы рабоы основного освещения
+    long mainLightOn_1, mainLightOn_2;  // Время включения освещения в режме 1
+    long mainLightOff_1, mainLightOff_2;  // Вермя выключения освещения в режиме 1
     long aerTopStartTime_1, aerTopStartTime_2; // Точка отсчёта верхней аэрации обоих блоков
     long aerDownStartTime_1, aerDownStartTime_2; // Точка отсчёта нижней аэрации обоих блоков
-    
-    int timeNow; // Текущее время в секундах с начала дня. Время тянется с Blynk
+    long aerTempTimeTop_1, aerTempTimeTop_2; // Переменная t1 от которой будет одти отсчёт для каждого блока отдельно
+    long aerTempTimeDown_1, aerTempTimeDown_2; // Переменная t1 от которой будет одти отсчёт для каждого блока отдельно
+    long timeNowBlynk; // Время в секундах с Blynk
+    int timeNow; // Время суток
+
     packetData sensors1, sensors2, sensors3;
     borderValues borders[2];
   public:
 
     int airTempFlag, airHumFlag; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
+    bool aerTopFlag_1 = false, aerTopFlag_2 = false;
+    bool aerDownFlag_1 = false, aerDownFlag_2 = false;
 
     int n1_1, n1_2, m1_1, m1_2; // Длительность включения и выключения верхней и нижней аэрации в блоке 1
     int n2_1, n2_2, m2_1, m2_2; // Длительность включения и выключения верхней и нижней аэрации в блоке 2
@@ -184,7 +196,24 @@ class workObj{
 
 
     }
-    
+    // Записать значение длительности дальней красной досветки
+    void setRedLightDuration(int block, int duration){
+      if (block == 1){
+        redLightDuration_1 = duration;
+      }
+      if (block == 2){
+        redLightDuration_2 = duration;
+      }
+    }
+    // Записать значение режима 
+    void setRedLightMode(int block, int modeValue){
+      if (block == 1){
+        redLightMode_1 = modeValue;
+      }
+      if (block == 2){
+        redLightMode_2 = modeValue;
+      }
+    }
     // Запись времени старта отсчёта работы
     void setAerTime(String position, int block, long startTime){
       if (position == "top"){
@@ -205,6 +234,12 @@ class workObj{
       }
     }
 
+    void dropTempTimeToNow(){
+      aerTempTimeTop_1 = timeNowBlynk;
+      aerTempTimeTop_2 = timeNowBlynk;
+      aerTempTimeDown_1 = timeNowBlynk;
+      aerTempTimeDown_2 = timeNowBlynk;
+    }
     // Flags
     // start / end 
     void setMainLightTime(String timeType, int block, long timeValue){
@@ -326,9 +361,11 @@ class workObj{
     }
     // Функция для автоматической обработки автоматики отдельных блоков
     void lightControl();
-
+    // Функция для автоматической обработки дальней красной досветки
+    void redLightControl();
+   
     // Функция для включения или выключения полива отдельного блока
-
+    void aerationControl();
 
     // Функция для включения или выключения освещения отдельного блока
     
@@ -545,8 +582,56 @@ class workObj{
       
 
     }
-    // Функция для сохранения всех значений границ в энергонезависимую память
+    
 
+    // EEPROM free form 30 to 50 byte
+    // Функция для сохранение режимов и их длительности в EEPROM
+    void saveModesAndAerToEEPROM(){
+      EEPROM.write(30, mode);
+      EEPROM.write(31, redLightMode_1);
+      EEPROM.write(32, redLightMode_2);
+      EEPROM.write(33, getMainLightMode(1));
+      EEPROM.write(34, getMainLightMode(2));
+      
+      EEPROM.write(35, n1_1);
+      EEPROM.write(36, n1_2);
+      EEPROM.write(37, n2_1);
+      EEPROM.write(38, n2_2);
+
+      EEPROM.write(39, m1_1);
+      EEPROM.write(40, m1_2);
+      EEPROM.write(41, m2_1);
+      EEPROM.write(42, m2_2);
+
+      EEPROM.write(43, redLightDuration_1);
+      EEPROM.write(44, redLightDuration_2);
+      EEPROM.commit();
+      // Serial.println("Saving modes ...");
+    }
+    // Функция для восстановления всех режимов и их длительностей из EEPROM
+    void restoreModesAndAerFromEEPROM(){
+      Serial.println("Restoring modes ...");
+      mode = EEPROM.read(30);
+      redLightMode_1 = EEPROM.read(31);
+      redLightMode_2 = EEPROM.read(32);
+      changeMainLightMode(EEPROM.read(33), 1);
+      changeMainLightMode(EEPROM.read(34), 2);
+
+      n1_1 = EEPROM.read(35);
+      n1_2 = EEPROM.read(36);
+      n2_1 = EEPROM.read(37);
+      n2_2 = EEPROM.read(38);
+
+      m1_1 = EEPROM.read(39);
+      m1_2 = EEPROM.read(40);
+      m2_1 = EEPROM.read(41);
+      m2_2 = EEPROM.read(42);
+
+      redLightDuration_1 = EEPROM.read(43);
+      redLightDuration_2 = EEPROM.read(44);
+
+    }
+    // Функция для сохранения всех значений границ в энергонезависимую память
     void saveBordersToEEPROM(int bordersGroup, String border){
       if (border == "groundHumDay")
         EEPROM.write(0 * bordersGroup-1, borders[bordersGroup].groundHumDay);
@@ -637,11 +722,11 @@ class workObj{
     }
     // Функция для обновления переменной времени тянущейся с Blynk
     void calculateTimeBlynk(){
-      timeNow = hour()*3600 + minute()*60 + second();
+      timeNowBlynk = hour()*3600 + minute()*60 + second();
     }
     // Функция для получения значения переменной времени Blynk
     long getTimeBlynk(){
-      return timeNow;
+      return timeNowBlynk;
     }
     long getMainLightTime(String timeType, int block){
       if (timeType == "start"){
@@ -697,7 +782,108 @@ void workObj::lightControl() {
 
 }
 
+void workObj::redLightControl(){
+  if (getMode() == automatic){
+    // Режим 1 блока 1
+    if (redLightMode_1 == timed){
+      // Досветка за 'redLightDuration_1' секунд основного освещения
+      if (getTimeBlynk()+redLightDuration_1 == getMainLightTime("start", 1)){
+        light01_1.on();
+      } // Выключение вместе с включением основного
+      else if (getTimeBlynk() == getMainLightTime("start", 1)){
+        light01_1.off();
+      } // Включение после выключения освного освещения
+      else if (getTimeBlynk() == getMainLightTime("end", 1)){
+        light01_1.on();
+      } // Выключение через 'redLightDuration_1'
+      else if (getTimeBlynk()-redLightDuration_1 == getMainLightTime("end", 1)){
+        light01_1.off();
+      }
 
+    }
+    // Режим 1 блока 2
+    if (redLightMode_2 == timed){
+      // Досветка за 'redLightDuration_1' секунд основного освещения
+      if (getTimeBlynk()+redLightDuration_2 == getMainLightTime("start", 2)){
+        light01_2.on();
+      } // Выключение вместе с включением основного
+      else if (getTimeBlynk() == getMainLightTime("start", 2)){
+        light01_2.off();
+      } // Включение после выключения освного освещения
+      else if (getTimeBlynk() == getMainLightTime("end", 2)){
+        light01_2.on();
+      } // Выключение через 'redLightDuration_1'
+      else if (getTimeBlynk()-redLightDuration_2 == getMainLightTime("end", 2)){
+        light01_2.off();
+      }
+
+    }
+  }
+}
+
+void workObj::aerationControl(){
+   if (getMode() == automatic){
+      // Блок 1 верхняя аэрации
+      // Если сейчас не поливаем и время смены режима
+      if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == false)){
+        aerTempTimeTop_1 = timeNowBlynk + n1_1;
+        valve1_1.on();
+        aerTopFlag_1 = true;
+        // Serial.println("aerTopOn");
+      }
+      if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true)){
+        aerTempTimeTop_1 = timeNowBlynk + m1_1;
+        valve1_1.off();
+        aerTopFlag_1 = false;
+        // Serial.println("aerTopOff");
+      }
+
+      // Блок 1 нижняя аэрация
+      if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == false)){
+        aerTempTimeDown_1 = timeNowBlynk + n1_2;
+        valve2_1.on();
+        aerDownFlag_1 = true;
+        // Serial.println("aerDownOn");
+      }
+      if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == true)){
+        aerTempTimeDown_1 = timeNowBlynk + m1_2;
+        valve2_1.off();
+        aerDownFlag_1 = false;
+        // Serial.println("aerDownOff");
+      }
+
+      // Блок 2 верхняя аэрации
+      // Если сейчас не поливаем и время смены режима
+      if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == false)){
+        aerTempTimeTop_2 = timeNowBlynk + n2_1;
+        valve1_2.on();
+        aerTopFlag_2 = true;
+        // Serial.println("aerTopOn");
+      }
+      if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == true)){
+        aerTempTimeTop_2 = timeNowBlynk + m2_1;
+        valve1_2.off();
+        aerTopFlag_2 = false;
+        // Serial.println("aerTopOff");
+      }
+
+      // Блок 2 нижняя аэрация
+      if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == false)){
+        aerTempTimeDown_2 = timeNowBlynk + n2_2;
+        valve2_2.on();
+        aerDownFlag_2 = true;
+        // Serial.println("aerTopOn");
+      }
+      if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == true)){
+        aerTempTimeDown_2 = timeNowBlynk + m2_2;
+        valve2_2.off();
+        aerDownFlag_2 = false;
+        // Serial.println("aerTopOff");
+      }
+
+
+   }
+}
 // Прототип функции разбора пакета данных с блока сенсоров
 void parsePackage(packetData&, String);
 // Прототип функции отображения данных пакета в консоль
@@ -1074,49 +1260,38 @@ BLYNK_WRITE(V3){
 
 // Время включения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V4){
-
-  obj1.setMainLightTime("start", 1, param[0].asLong()); // Время старта
-  }// Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
-  
-  // int a = param.asInt();
-  // if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
-    // if (a == 1){
-      // light1_1.on();
-      // Serial.println("Main light 1 on");
-    // }
-    // if (a == 0){
-      // light1_1.off();
-    // }
-    
-  }
+  obj1.setMainLightTime("start", 1, param[0].asLong()); 
 }
-
 // Время выключения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V5){
   obj1.setMainLightTime("end", 1, param[0].asLong());
-  if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(1) == timed)){
-    if (obj1.getTimeBlynk() == obj1.getMainLightTime("end", 2)){
-      light1_1.off();
-    }
-  }
-
 }
-// Таймер для режима 1 основного освещения блока 2
+
+// Время включения для режима 1 основного освещения блока 2
 BLYNK_WRITE(V6){
-  int a = param.asInt();
-  // Если автоматический режим и освещение в режиме 1, то освещение включается и выключается по таймеру
-  if ((obj1.getMode() == automatic) && (obj1.getMainLightMode(2) == timed)){
-    if (a == 1){
-      light1_2.on();
-    }
-    if (a == 0){
-      light1_2.off();
-    }
-    
-  }
+  obj1.setMainLightTime("start", 2, param[0].asLong()); 
+}
+// Время выключения для режима 1 основного освещения блока 2
+BLYNK_WRITE(V7){
+  obj1.setMainLightTime("end", 2, param[0].asLong()); 
 }
 
-
+// Режим дальнего красного освещения блока 1
+BLYNK_WRITE(V26){
+  obj1.setRedLightMode(1, param.asInt());
+}
+// Режим дальнего красного освещения блока 2
+BLYNK_WRITE(V27){
+  obj1.setRedLightMode(2, param.asInt());
+}
+// Длительность красной досветки блока 1
+BLYNK_WRITE(V8){
+  obj1.setRedLightDuration(1, param.asInt());
+}
+// Длительность красной досветки блока 2
+BLYNK_WRITE(V9){
+  obj1.setRedLightDuration(2, param.asInt());
+}
 
 // Точка отсчёта верхней аэрации блока 1
 BLYNK_WRITE(V44){
@@ -1169,6 +1344,8 @@ BLYNK_WRITE(V69){
   obj1.m2_2 = param.asInt();
 }
 
+// Костыль для функции obj1.saveModesAmdAerToEEPROM()
+void flagTrue();
 
 void setup() {
   // Очень плохое решение проблемы проседания питания при старте WiFi
@@ -1178,22 +1355,28 @@ void setup() {
 
 
 
-  EEPROM.begin(30); // Init 30 bytes of EEPROM
+  EEPROM.begin(50); // Init 30 bytes of EEPROM
   Wire.begin();        // Join I2C bus
   pcf_1.begin();       // Connect PCF8574_1 pin extension
   pcf_2.begin();       // Connect PCF8574_2 pin extension
   Serial.begin(115200);  // start serial for output
   obj1.restoreBordersFromEEPROM(1);
   obj1.restoreBordersFromEEPROM(2);
+  obj1.restoreModesAndAerFromEEPROM();
   // Blynk.begin(auth, ssid, pass);
+  eeprom.setInterval(1000L, flagTrue);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
   // packetData data[slavesNumber]; 
-  
+  // Обновляем переменную времени
+  obj1.getTimeBlynk();
+  // Сброс значений временных переменных к текущему для работы аэрации
+  obj1.dropTempTimeToNow();
+  timerEEPROM = obj1.getTimeBlynk();
 }
 
 void loop() {
-  
+  eeprom.run();
   // saveEEPROM.run();
   // obj1.showBorders(1);
   // delay(1000);
@@ -1201,16 +1384,41 @@ void loop() {
   // obj1.showBorders(2);
   // heater1_1.printInfo();
   // heater1_2.printInfo();
+  if (firstConnectedFlag == true){
+    obj1.dropTempTimeToNow();
+    firstConnectedFlag = false;
+  }
+  Blynk.run(); 
+  obj1.calculateTimeBlynk(); // Перевоит время из часов, минут и секунд в секунды
+  obj1.useRelays(); // Применяем значения реле
   
-  Blynk.run();  
-  obj1.useRelays();
+  if (saveFlag == true){
+    // Serial.println("saved");
+    obj1.saveModesAndAerToEEPROM();
+    saveFlag = false;
+  }
+  // if (obj1.getTimeBlynk() >= timerEEPROM){
+  //   obj1.saveModesAndAerToEEPROM();
+  //   timerEEPROM = obj1.getTimeBlynk() + delayForEEPROM;
+  // }
+  
+  Serial.println("Time now : " + String(hour()) + ":" + String(minute()) + ":" + String(second()));
+  // Serial.println("time from Blynk :" + String(obj1.getTimeBlynk()));
   if (obj1.getMode() == automatic){
     obj1.airHumFlag = obj1.airHumCheck();
     obj1.airTempFlag = obj1.airTempCheck();
+    obj1.lightControl();
+    obj1.redLightControl();
+    obj1.aerationControl();
     // obj1.groundHumidControl();
     // obj1.lightSeparateControl();
   }
 
+}
+// Костыль для функции obj1.saveModesAmdAerToEEPROM()
+void flagTrue(){
+  saveFlag = true;
+  // Serial.println("Changing flag");
 }
 
 // Функция для применения значения реле по его номеру
@@ -1272,7 +1480,7 @@ void setRelay(relay r1){
       break;
   }
   // Отправка значения об изменении состояния реле.
-  Blynk.virtualWrite(r1.getVPinNumber(), r1.returnState()); 
+  Blynk.virtualWrite(r1.getVPinNumber(), !r1.returnState()); 
 }
 
 

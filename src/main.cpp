@@ -35,7 +35,7 @@ enum modes {automatic, manual, timeControlled, alert};
 enum lightModes {timed = 1, timed_with_light_level};
 bool firstConnectedFlag = true;
 long timerEEPROM = 0;
-long delayForEEPROM = 2000; // Длительность между записью данных 
+long delayForEEPROM = 5000; // Длительность между записью данных 
                             // режмов в EEPROM в 'мс' 
 bool saveFlag = false;
 // bool setFlag = false;
@@ -50,7 +50,7 @@ V25 - relay16 control
 
 
 BlynkTimer eeprom;
-
+BlynkTimer requestSlave;
 
 // Structure for packet variables saving
 struct packetData{
@@ -170,10 +170,10 @@ class workObj{
     long timeNowBlynk; // Время в секундах с Blynk
     int timeNow; // Время суток
 
-    packetData sensors1, sensors2, sensors3;
+    
     borderValues borders[2];
   public:
-
+    packetData sensors1, sensors2, sensors3;
     int airTempFlag, airHumFlag; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
     bool aerTopFlag_1 = false, aerTopFlag_2 = false;
     bool aerDownFlag_1 = false, aerDownFlag_2 = false;
@@ -1346,7 +1346,8 @@ BLYNK_WRITE(V69){
 
 // Костыль для функции obj1.saveModesAmdAerToEEPROM()
 void flagTrue();
-
+void request();
+void sentToBlynk();
 void setup() {
   // Очень плохое решение проблемы проседания питания при старте WiFi
   // Но другого у меня нет. Так что будет пока так.
@@ -1356,15 +1357,16 @@ void setup() {
 
 
   EEPROM.begin(50); // Init 30 bytes of EEPROM
-  Wire.begin();        // Join I2C bus
-  pcf_1.begin();       // Connect PCF8574_1 pin extension
-  pcf_2.begin();       // Connect PCF8574_2 pin extension
+  Wire.begin(21, 22);        // Join I2C bus
+  pcf_1.begin(21, 22);       // Connect PCF8574_1 pin extension
+  pcf_2.begin(21, 22);       // Connect PCF8574_2 pin extension
   Serial.begin(115200);  // start serial for output
   obj1.restoreBordersFromEEPROM(1);
   obj1.restoreBordersFromEEPROM(2);
   obj1.restoreModesAndAerFromEEPROM();
   // Blynk.begin(auth, ssid, pass);
   eeprom.setInterval(1000L, flagTrue);
+  requestSlave.setInterval(5000L, request);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
   // packetData data[slavesNumber]; 
@@ -1377,13 +1379,7 @@ void setup() {
 
 void loop() {
   eeprom.run();
-  // saveEEPROM.run();
-  // obj1.showBorders(1);
-  // delay(1000);
-  
-  // obj1.showBorders(2);
-  // heater1_1.printInfo();
-  // heater1_2.printInfo();
+  requestSlave.run();
   if (firstConnectedFlag == true){
     obj1.dropTempTimeToNow();
     firstConnectedFlag = false;
@@ -1397,13 +1393,8 @@ void loop() {
     obj1.saveModesAndAerToEEPROM();
     saveFlag = false;
   }
-  // if (obj1.getTimeBlynk() >= timerEEPROM){
-  //   obj1.saveModesAndAerToEEPROM();
-  //   timerEEPROM = obj1.getTimeBlynk() + delayForEEPROM;
-  // }
   
-  Serial.println("Time now : " + String(hour()) + ":" + String(minute()) + ":" + String(second()));
-  // Serial.println("time from Blynk :" + String(obj1.getTimeBlynk()));
+  // Serial.println("Time now : " + String(hour()) + ":" + String(minute()) + ":" + String(second()));
   if (obj1.getMode() == automatic){
     obj1.airHumFlag = obj1.airHumCheck();
     obj1.airTempFlag = obj1.airTempCheck();
@@ -1414,7 +1405,39 @@ void loop() {
     // obj1.lightSeparateControl();
   }
 
+
 }
+
+// Функция для опроса плат-slave
+void request(){
+  Serial.println("Request to slave 1");
+  Wire.requestFrom(8, 28); 
+  String arrData = "";
+  // Запись данных от slave
+  while(Wire.available() > 0){
+    char c = Wire.read();
+    arrData += c;
+    // if (debug) Serial.print(c);
+  }
+  if (debug) Serial.println();
+  // Запись данных в объект sensors1
+  parsePackage(obj1.sensors1, arrData);
+  // Отображение тестовой информации
+  if (debug) showPackage(obj1.sensors1);
+
+
+
+  sentToBlynk();
+}
+
+void sentToBlynk(){
+  Blynk.virtualWrite(V70, obj1.sensors1.airTemp);
+  Blynk.virtualWrite(V71, obj1.sensors1.airHum);
+  Blynk.virtualWrite(V72, obj1.sensors1.groundTemp);
+  Blynk.virtualWrite(V73, obj1.sensors1.groundHum);
+  Blynk.virtualWrite(V74, obj1.sensors1.lightLevel);
+}
+
 // Костыль для функции obj1.saveModesAmdAerToEEPROM()
 void flagTrue(){
   saveFlag = true;
@@ -1486,7 +1509,8 @@ void setRelay(relay r1){
 
 // Функция для опроса всех блоков сенсоров разом
 // 
-void slavesQuery(packetData* data[]){
+
+void slavesQuery(packetData* data[3]){
   for(int i = 1; i <= slavesNumber; i++){
     Wire.requestFrom(i, 28);
     String arrivedData = "";
@@ -1496,66 +1520,95 @@ void slavesQuery(packetData* data[]){
       arrivedData += c;
       if(debug) Serial.print(c);
     }
-    parsePackage(*(data[i]), arrivedData);
-    showPackage(*(data[i]));
+    parsePackage(*(data[i-1]), arrivedData);
+    showPackage(*(data[i-1]));
   }
 }
+
 // Функция для разбора пакета данных с блока сенсоров
 void parsePackage(packetData& d1, String arrData){
   String temp = "";
-  
+  packetData tempPack;
   // ID reading
   char tempChar[10];
   tempChar[0] = arrData[0]; tempChar[1] = arrData[1];
-  d1.id = atof(tempChar);
+  tempPack.id = atof(tempChar);
 
   // Air temperature reading
   tempChar[0] = arrData[3];
   tempChar[1] = arrData[4];
-  d1.airTemp = atof(tempChar);
-  if(arrData[2] == '-') d1.airTemp = -d1.airTemp;
+  tempPack.airTemp = atof(tempChar);
+  if(arrData[2] == '-') tempPack.airTemp = -tempPack.airTemp;
   tempChar[0] = arrData[5];
   tempChar[1] = arrData[6];
-  d1.airTemp += atof(tempChar)/100;
+  tempPack.airTemp += atof(tempChar)/100;
 
   // Air humidity reading
   tempChar[0] = arrData[7];
   tempChar[1] = arrData[8];
   tempChar[2] = arrData[9];
-  d1.airHum = atof(tempChar);
+  tempPack.airHum = atof(tempChar);
   tempChar[0] = arrData[10];
   tempChar[1] = arrData[11];
   tempChar[2] = '\0';
-  d1.airHum += atof(tempChar)/100;
+  tempPack.airHum += atof(tempChar)/100;
 
   // Ground temperature reading
   tempChar[0] = arrData[13];
   tempChar[1] = arrData[14];
-  d1.groundTemp = atof(tempChar);
-  if(arrData[12] == '-') d1.groundTemp = -d1.groundTemp;
+  tempPack.groundTemp = atof(tempChar);
+  if(arrData[12] == '-') tempPack.groundTemp = -tempPack.groundTemp;
   tempChar[0] = arrData[15];
   tempChar[1] = arrData[16];
-  d1.groundTemp += atof(tempChar)/100;
+  tempPack.groundTemp += atof(tempChar)/100;
 
   // Ground humidity reading
   tempChar[0] = arrData[17];
   tempChar[1] = arrData[18];
   tempChar[2] = arrData[19];
-  d1.groundHum = atof(tempChar);
+  tempPack.groundHum = atof(tempChar);
   tempChar[2] = '\0';
   tempChar[0] = arrData[20];
   tempChar[1] = arrData[21];
-  d1.groundHum += atof(tempChar)/100;
+  tempPack.groundHum += atof(tempChar)/100;
 
   // Light level reading
   tempChar[0] = arrData[22];
   tempChar[1] = arrData[23];
   tempChar[2] = arrData[24];
-  d1.lightLevel = atof(tempChar);
+  tempPack.lightLevel = atof(tempChar);
   tempChar[2] = '\0';
   tempChar[0] = arrData[26];
   tempChar[1] = arrData[27];
-  d1.lightLevel += atof(tempChar)/100;
+  tempPack.lightLevel += atof(tempChar)/100;
+
+  int zerosCounter = 0;
+  if (tempPack.airHum == 0)
+    zerosCounter++;
+  if (tempPack.airTemp == 0)
+    zerosCounter++;
+  if (tempPack.groundHum == 0)
+    zerosCounter++;
+  if (tempPack.groundTemp == 0)
+    zerosCounter++;
+  if (tempPack.lightLevel == 0)
+    zerosCounter++;
+  if (tempPack.id == 0)
+    zerosCounter++;
+  // Check if data corrupted
+  if (zerosCounter != 6){
+    float temp;
+    temp = tempPack.airTemp;
+    tempPack.airTemp = tempPack.airHum;
+    tempPack.airHum = temp;
+
+    d1 = tempPack;
+  
+  }
+  // float temp;
+  // temp = d1.airHum;
+  // d1.airHum = d1.airTemp;
+  // d1.airTemp = temp;
 }
 // Функция для отображения данных пакета в консоль
 void showPackage(packetData p1){

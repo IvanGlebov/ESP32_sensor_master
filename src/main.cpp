@@ -27,7 +27,14 @@ char pass[] = "Q4WmFQTa"; // Q4WmFQTa
 PCF8574 pcf_1(0x20);
 PCF8574 pcf_2(0x21);
 
-#define slavesNumber 1
+
+#define slavesNumber 2
+
+#define slaveAddr_1 8
+#define slaveAddr_2 9
+
+#define packetLength 28 // Длина принимаемого пакета данных в байтах
+
 #define debug true
 
 enum time { dayTime, night};
@@ -1411,7 +1418,7 @@ void loop() {
 // Функция для опроса плат-slave
 void request(){
   Serial.println("Request to slave 1");
-  Wire.requestFrom(8, 28); 
+  Wire.requestFrom(slaveAddr_1, packetLength); 
   String arrData = "";
   // Запись данных от slave
   while(Wire.available() > 0){
@@ -1425,17 +1432,33 @@ void request(){
   // Отображение тестовой информации
   if (debug) showPackage(obj1.sensors1);
 
+  delay(200);
 
+  Serial.println("Request to slave 2");
+  Wire.requestFrom(slaveAddr_2, packetLength);
+  arrData = "";
+  while(Wire.available() > 0){
+    char c = Wire.read();
+    arrData+= c;
+  }
+  if (debug) Serial.println();
+  parsePackage(obj1.sensors2, arrData);
+  if (debug) showPackage(obj1.sensors2);
 
   sentToBlynk();
 }
 
 void sentToBlynk(){
+  // Sensors block 1
   Blynk.virtualWrite(V70, obj1.sensors1.airTemp);
   Blynk.virtualWrite(V71, obj1.sensors1.airHum);
   Blynk.virtualWrite(V72, obj1.sensors1.groundTemp);
   Blynk.virtualWrite(V73, obj1.sensors1.groundHum);
   Blynk.virtualWrite(V74, obj1.sensors1.lightLevel);
+  // Sensors block 2
+
+
+
 }
 
 // Костыль для функции obj1.saveModesAmdAerToEEPROM()

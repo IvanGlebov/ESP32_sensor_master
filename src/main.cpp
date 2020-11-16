@@ -1432,7 +1432,7 @@ void request(){
   // Отображение тестовой информации
   if (debug) showPackage(obj1.sensors1);
 
-  delay(200);
+  // delay(200);
 
   Serial.println("Request to slave 2");
   Wire.requestFrom(slaveAddr_2, packetLength);
@@ -1456,7 +1456,11 @@ void sentToBlynk(){
   Blynk.virtualWrite(V73, obj1.sensors1.groundHum);
   Blynk.virtualWrite(V74, obj1.sensors1.lightLevel);
   // Sensors block 2
-
+  Blynk.virtualWrite(V75, obj1.sensors2.airTemp);
+  Blynk.virtualWrite(V76, obj1.sensors2.airHum);
+  Blynk.virtualWrite(V77, obj1.sensors2.groundTemp);
+  Blynk.virtualWrite(V78, obj1.sensors2.groundHum);
+  Blynk.virtualWrite(V79, obj1.sensors2.lightLevel);
 
 
 }

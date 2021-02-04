@@ -20,6 +20,7 @@
 // home
 // Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84
 // rwuSDq5orOfSV8nF75xsQT7YSR_e2Xqf
+
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
 char ssid[] = "Keenetic-4926"; // Keenetic-4926
 char pass[] = "Q4WmFQTa"; // Q4WmFQTa
@@ -175,13 +176,13 @@ class workObj{
     long aerTempTimeTop_1, aerTempTimeTop_2; // Переменная t1 от которой будет одти отсчёт для каждого блока отдельно
     long aerTempTimeDown_1, aerTempTimeDown_2; // Переменная t1 от которой будет одти отсчёт для каждого блока отдельно
     long timeNowBlynk; // Время в секундах с Blynk
-    int timeNow; // Время суток
+    int timeNow = dayTime; // Время суток
 
     
-    borderValues borders[2];
+    borderValues borders[3];
   public:
     packetData sensors1, sensors2, sensors3;
-    int airTempFlag, airHumFlag; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
+    String airTempFlags, airHumFlags; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
     bool aerTopFlag_1 = false, aerTopFlag_2 = false;
     bool aerDownFlag_1 = false, aerDownFlag_2 = false;
 
@@ -359,13 +360,9 @@ class workObj{
       setRelay(steamgen1_1); // Увлажнитель в блоке 1
       setRelay(steamgen1_2); // Увлажнитель в блоке 2
       setRelay(heater1_1);  // Отопрелние в блоке 1
-      // setRelay(heater1_2);  // Отобление в блоке 2
+      setRelay(heater1_2);  // Отобление в блоке 2
     }
-    
-    // Функция для обработки автоматического полива
-    void groundHumidControl(){
-      
-    }
+
     // Функция для автоматической обработки автоматики отдельных блоков
     void lightControl();
     // Функция для автоматической обработки дальней красной досветки
@@ -374,223 +371,20 @@ class workObj{
     // Функция для включения или выключения полива отдельного блока
     void aerationControl();
 
-    // Функция для включения или выключения освещения отдельного блока
-    
-    // Функция обработки температуры воздуха. 
-    // Если температура низкая, то включается отопление,
-    // если температура высокая, то включается вентиляция конкретного блока
-    // теплицы (из 2-х)
-    // Возвращает 2 если функция занята отоплением и 1 если вентиляцией.
-    // 0 возвращается только если функция ничего не сделала
-    int airTempCheck(){
-      // Переменная для хранения состояния условий. Если возвращается "1", то активна вентиляция. Если "2", то активно отопление
-      // если возвращается "0", то с устройсовом исполнителем можно взаимодействовать спокойно
-      int returnFlag = 0;
-      
-      // Если сейчас днейной режим, то используем дневные границы
-      if (timeNow == dayTime){
-        // Нагрев если маленькая температура
-        // Блок 1
-        if (sensors1.airTemp < borders[0].lowAirTempDay){
-          heater1_1.on();
-          returnFlag = 2;
-        }
-        else{
-          heater1_1.off();
-          returnFlag = (returnFlag == 2) ? 2 : 0;
-        }
 
-        // Блок 2
-        if (sensors2.airTemp < borders[1].lowAirTempDay){
-          heater1_2.on();
-          returnFlag = 2;
-        }
-        else{
-          heater1_2.off();
-          returnFlag = (returnFlag == 2) ? 2 : 0;
-        }
+    // Функция контроля влажности
+    String airHumCheckDay();
+    String airHumCheckNight();
+    // Функция контроля температуры
+    String airTempCheckDay();
+    String airTempChechNight();
+    // Функция обработки капельного полива
+    void groundHumCheckDay();
+    void groundHumCheckNight();
 
-        // Включение вентиляции если высокая температура
-        // Блок 1
-        if (sensors1.airTemp > borders[0].highAirTempDay){
-          distrif1_1.on();
-          returnFlag = 1;
-        } // Если вентиляция не занята другой функцией, то выключаем её
-        else if (airHumFlag != 1){
-          distrif1_1.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-        //  Блок 2
-        if (sensors2.airTemp > borders[1].highAirTempDay){
-          distrif1_2.on();
-          returnFlag = 1;
-        } // Если вентиляция не занята другой функцией, то выключаем её
-        else if (airHumFlag != 1) {
-          distrif1_2.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-      }
-
-      // Если сейчас ночной режим, то используем ночные границы
-      if (timeNow == night){
-        // Нагрев если маленькая температура
-        // Блок 1
-        if (sensors1.airTemp < borders[0].lowAirTempNight){
-          heater1_1.on();
-          returnFlag = 2;
-        }
-        else{
-          heater1_1.off();
-          returnFlag = (returnFlag == 2) ? 2 : 0;
-        }
-
-        // Блок 2
-        if (sensors2.airTemp < borders[1].lowAirTempNight){
-          heater1_2.on();
-          returnFlag = 2;
-        }
-        else{
-          heater1_2.off();
-          returnFlag = (returnFlag == 2) ? 2 : 0;
-        }
-
-        // Включение вентиляции если высокая температура
-        // Блок 1
-        if (sensors1.airTemp > borders[0].highAirTempNight){
-          distrif1_1.on();
-          returnFlag = 1;
-        }
-        else if (airHumFlag != 1) {
-          distrif1_1.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-        //  Блок 2
-        if (sensors2.airTemp > borders[1].highAirTempNight){
-          distrif1_2.on();
-          returnFlag = 1;
-        }
-        else if (airHumFlag != 1) {
-          distrif1_2.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-      }
-      
-      return returnFlag;
-    }
-    
     // Возвращает 1 если функция занята вентиляцией и 2 если увлежнением.
     // 0 возвращается только если функция ничего не сделала
-    int airHumCheck(){
-      // Переменная для хранения состояния условий. Если возвращается "1", то активно каоке-то условие и выключать не надо
-      // если возвращается "0", то с устройсовом исполнителем можно взаимодействовать спокойно
-      int returnFlag = 0;
-
-      // timeNow = dayTime;
-      // Если сейчас днейной режим, то используем дневные границы
-      if (timeNow == dayTime){
-        // Если низкая влажность, то включить парогенератор
-        // Блок 1
-        if (sensors1.airHum < borders[0].lowAirHumDay){
-          steamgen1_1.on();
-          returnFlag = 1;
-        }
-        else{
-          steamgen1_1.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-        // Блок 2
-        if (sensors2.airHum < borders[1].lowAirHumDay){
-          steamgen1_2.on();
-          returnFlag = 1;
-        }
-        else{
-          steamgen1_2.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-
-
-        // Если высокая влажность, то включить вентиляцию. Если влажность вернулась в норму и другое устройство не задействует 
-        // исполнитель, то выключить вентиляцию
-        // Блок 1
-
-        // ТУТ БЛЯДСКАЯ ОШИБКА УБИВАЮЩАЯ ПРОЦЕСС
-        // пофикшено :)
-        // sensors1.airHum = 20;
-        if (sensors1.airHum > borders[0].highAirHumDay){
-          distrif1_1.on();
-          returnFlag = 1;
-          // Serial.println("AirTempCheck : " + String(airTempFlag));
-        }
-        else if (airTempFlag != 1) {
-          distrif1_1.off();
-          // Если возвращаемое значение уже успело стать равным 1, то не надо его обнулять и ломать логику.
-          // returnFlag = (returnFlag == 1) ? 1 : 0;
-          
-        }
-        // Блок 2
-        if (sensors2.airHum > borders[1].highAirHumDay){
-          distrif1_2.on();
-          returnFlag = 1;
-        } 
-        else if (airTempFlag != 1){
-          distrif1_2.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-      
-      }
-
-      // Если сейчас ночной режим, то используем ночные границы
-      if (timeNow == night){
-        // Если низкая влажность, то включить парогенератор
-        // Блок 1
-        if (sensors1.airHum < borders[0].lowAirHumNight){
-          steamgen1_1.on();
-          returnFlag = 2;
-        }
-        else{
-          steamgen1_1.off();
-          returnFlag = (returnFlag == 2) ? 2 : 0;
-        }
-        // Блок 2
-        if (sensors2.airHum < borders[1].lowAirHumNight){
-          steamgen1_2.on();
-          returnFlag = 2;
-        }
-        else{
-          steamgen1_2.off();
-          returnFlag = (returnFlag == 2) ? 2 : 0;
-        }
-
-        // Если высокая влажность, то включить вентиляцию. Если влажность вернулась в норму и другое устройство не задействует 
-        // исполнитель, то выключить вентиляцию
-        // Блок 1
-        if (sensors1.airHum > borders[0].highAirHumNight){
-          distrif1_1.on();
-          returnFlag = 1;
-        }
-        else if (airTempFlag != 1) {
-          distrif1_1.off();
-          // Если возвращаемое значение уже успело стать равным 1, то не надо его обнулять и ломать логику.
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-          // 
-        }
-        // Блок 2
-        if (sensors2.airHum > borders[1].highAirHumNight){
-          distrif1_2.on();
-          returnFlag = 1;
-        } 
-        else if (airTempFlag != 1){
-          distrif1_2.off();
-          returnFlag = (returnFlag == 1) ? 1 : 0;
-        }
-      
-        return returnFlag;
-      }
-      
-
-    }
     
-
     // EEPROM free form 30 to 50 byte
     // Функция для сохранение режимов и их длительности в EEPROM
     void saveModesAndAerToEEPROM(){
@@ -640,52 +434,103 @@ class workObj{
     }
     // Функция для сохранения всех значений границ в энергонезависимую память
     void saveBordersToEEPROM(int bordersGroup, String border){
-      if (border == "groundHumDay")
-        EEPROM.write(0 * bordersGroup-1, borders[bordersGroup].groundHumDay);
-      if (border == "groundHumNight")
-        EEPROM.write(1 * bordersGroup-1, borders[bordersGroup].groundHumNight);
-      if (border == "groundTempDay")
-        EEPROM.write(2 * bordersGroup-1, borders[bordersGroup].groundTempDay);
-      if (border == "groundTempNight")
-        EEPROM.write(3 * bordersGroup-1, borders[bordersGroup].groundTempNight);
-      if (border == "lowAirHumDay")
-        EEPROM.write(4 * bordersGroup-1, borders[bordersGroup].lowAirHumDay);
-      if (border == "lowAirHumNight")
-        EEPROM.write(5 * bordersGroup-1, borders[bordersGroup].lowAirHumNight);
-      if (border == "highAirHumDay")
-        EEPROM.write(6 * bordersGroup-1, borders[bordersGroup].highAirHumDay);
-      if (border == "highAirHumNight")
-        EEPROM.write(7 * bordersGroup-1, borders[bordersGroup].highAirHumNight);
-      if (border == "lowAirTempDay")
-        EEPROM.write(8 * bordersGroup-1, borders[bordersGroup].lowAirTempDay);
-      if (border == "lowAirTempNight")
-        EEPROM.write(9 * bordersGroup-1, borders[bordersGroup].lowAirTempNight);
-      if (border == "highAirTempDay")
-        EEPROM.write(10 * bordersGroup-1, borders[bordersGroup].highAirTempDay);
-      if (border == "highAirTempNight")
-        EEPROM.write(11 * bordersGroup-1, borders[bordersGroup].highAirTempNight);
-      if (border == "lightLevelDay")
-        EEPROM.write(12 * bordersGroup-1, borders[bordersGroup].lightLevelDay);
-      if (border == "lightLevelNight")
-        EEPROM.write(13 * bordersGroup-1, borders[bordersGroup].lightLevelNight);
+      if (bordersGroup == 1){
+        if (border == "groundHumDay")
+          EEPROM.write(0, borders[bordersGroup].groundHumDay);
+        if (border == "groundHumNight")
+          EEPROM.write(1, borders[bordersGroup].groundHumNight);
+        if (border == "groundTempDay")
+          EEPROM.write(2, borders[bordersGroup].groundTempDay+40);
+        if (border == "groundTempNight")
+          EEPROM.write(3, borders[bordersGroup].groundTempNight+40);
+        if (border == "lowAirHumDay")
+          EEPROM.write(4, borders[bordersGroup].lowAirHumDay);
+        if (border == "lowAirHumNight")
+          EEPROM.write(5, borders[bordersGroup].lowAirHumNight);
+        if (border == "highAirHumDay")
+          EEPROM.write(6, borders[bordersGroup].highAirHumDay);
+        if (border == "highAirHumNight")
+          EEPROM.write(7, borders[bordersGroup].highAirHumNight);
+        if (border == "lowAirTempDay")
+          EEPROM.write(8, borders[bordersGroup].lowAirTempDay+40);
+        if (border == "lowAirTempNight")
+          EEPROM.write(9, borders[bordersGroup].lowAirTempNight+40);
+        if (border == "highAirTempDay")
+          EEPROM.write(10, borders[bordersGroup].highAirTempDay+40);
+        if (border == "highAirTempNight")
+          EEPROM.write(11, borders[bordersGroup].highAirTempNight+40);
+        if (border == "lightLevelDay")
+          EEPROM.write(12, borders[bordersGroup].lightLevelDay);
+        if (border == "lightLevelNight")
+          EEPROM.write(13, borders[bordersGroup].lightLevelNight);
+      }
+      if (bordersGroup == 2){
+        if (border == "groundHumDay")
+          EEPROM.write(14, borders[bordersGroup].groundHumDay);
+        if (border == "groundHumNight")
+          EEPROM.write(15, borders[bordersGroup].groundHumNight);
+        if (border == "groundTempDay")
+          EEPROM.write(16, borders[bordersGroup].groundTempDay+40);
+        if (border == "groundTempNight")
+          EEPROM.write(17, borders[bordersGroup].groundTempNight+40);
+        if (border == "lowAirHumDay")
+          EEPROM.write(18, borders[bordersGroup].lowAirHumDay);
+        if (border == "lowAirHumNight")
+          EEPROM.write(19, borders[bordersGroup].lowAirHumNight);
+        if (border == "highAirHumDay")
+          EEPROM.write(20, borders[bordersGroup].highAirHumDay);
+        if (border == "highAirHumNight")
+          EEPROM.write(21, borders[bordersGroup].highAirHumNight);
+        if (border == "lowAirTempDay")
+          EEPROM.write(22, borders[bordersGroup].lowAirTempDay+40);
+        if (border == "lowAirTempNight")
+          EEPROM.write(23, borders[bordersGroup].lowAirTempNight+40);
+        if (border == "highAirTempDay")
+          EEPROM.write(24, borders[bordersGroup].highAirTempDay+40);
+        if (border == "highAirTempNight")
+          EEPROM.write(25, borders[bordersGroup].highAirTempNight+40);
+        if (border == "lightLevelDay")
+          EEPROM.write(26, borders[bordersGroup].lightLevelDay);
+        if (border == "lightLevelNight")
+          EEPROM.write(27, borders[bordersGroup].lightLevelNight);
+      }
+
       EEPROM.commit();
     }
     // Функция для чтения всех значений границ из энергонезависимой памяти
     void restoreBordersFromEEPROM(int bordersGroup){
-      borders[bordersGroup].groundHumDay = (EEPROM.read(0 + bordersGroup) == 255) ? 0 : EEPROM.read(0 + bordersGroup);
-      borders[bordersGroup].groundHumNight = (EEPROM.read(1 + bordersGroup) == 255) ? 0 : EEPROM.read(1 + bordersGroup);
-      borders[bordersGroup].groundTempDay = (EEPROM.read(2 + bordersGroup) == 255) ? 0 : EEPROM.read(2 + bordersGroup);
-      borders[bordersGroup].groundTempNight = (EEPROM.read(3 + bordersGroup) == 255) ? 0 : EEPROM.read(3 + bordersGroup);
-      borders[bordersGroup].lowAirHumDay = (EEPROM.read(4 + bordersGroup) == 255) ? 0 : EEPROM.read(4 + bordersGroup);
-      borders[bordersGroup].lowAirHumNight = (EEPROM.read(5 + bordersGroup) == 255) ? 0 : EEPROM.read(5 + bordersGroup);
-      borders[bordersGroup].highAirHumDay = (EEPROM.read(6 + bordersGroup) == 255) ? 0 : EEPROM.read(6 + bordersGroup);
-      borders[bordersGroup].highAirHumNight = (EEPROM.read(7 + bordersGroup) == 255) ? 0 : EEPROM.read(7 + bordersGroup);
-      borders[bordersGroup].lowAirTempDay = (EEPROM.read(8 + bordersGroup) == 255) ? 0 : EEPROM.read(8 + bordersGroup);
-      borders[bordersGroup].lowAirTempNight = (EEPROM.read(9 + bordersGroup) == 255) ? 0 : EEPROM.read(9 + bordersGroup);
-      borders[bordersGroup].highAirTempDay = (EEPROM.read(10 + bordersGroup) == 255) ? 0 : EEPROM.read(10 + bordersGroup);
-      borders[bordersGroup].highAirTempNight = (EEPROM.read(11 + bordersGroup) == 255) ? 0 : EEPROM.read(11 + bordersGroup);
-      borders[bordersGroup].lightLevelDay = (EEPROM.read(12 + bordersGroup) == 255) ? 0 : EEPROM.read(12 + bordersGroup);
-      borders[bordersGroup].lightLevelNight = (EEPROM.read(13 + bordersGroup) == 255) ? 0 : EEPROM.read(13 + bordersGroup);
+      if (bordersGroup == 1){
+        borders[1].groundHumDay = (EEPROM.read(0) == 255) ? 0 : EEPROM.read(0);
+        borders[1].groundHumNight = (EEPROM.read(1) == 255) ? 0 : EEPROM.read(1);
+        borders[1].groundTempDay = (EEPROM.read(2) == 255) ? 0 : EEPROM.read(2) - 40;
+        borders[1].groundTempNight = (EEPROM.read(3) == 255) ? 0 : EEPROM.read(3) - 40;
+        borders[1].lowAirHumDay = (EEPROM.read(4) == 255) ? 0 : EEPROM.read(4);
+        borders[1].lowAirHumNight = (EEPROM.read(5) == 255) ? 0 : EEPROM.read(5);
+        borders[1].highAirHumDay = (EEPROM.read(6) == 255) ? 0 : EEPROM.read(6);
+        borders[1].highAirHumNight = (EEPROM.read(7) == 255) ? 0 : EEPROM.read(7);
+        borders[1].lowAirTempDay = (EEPROM.read(8) == 255) ? 0 : EEPROM.read(8) - 40;
+        borders[1].lowAirTempNight = (EEPROM.read(9) == 255) ? 0 : EEPROM.read(9) - 40;
+        borders[1].highAirTempDay = (EEPROM.read(10) == 255) ? 0 : EEPROM.read(10) - 40;
+        borders[1].highAirTempNight = (EEPROM.read(11) == 255) ? 0 : EEPROM.read(11) - 40;
+        borders[1].lightLevelDay = (EEPROM.read(12) == 255) ? 0 : EEPROM.read(12);
+        borders[1].lightLevelNight = (EEPROM.read(13) == 255) ? 0 : EEPROM.read(13);  
+      }
+      if (bordersGroup == 2){
+        borders[2].groundHumDay = (EEPROM.read(14) == 255) ? 0 : EEPROM.read(14);
+        borders[2].groundHumNight = (EEPROM.read(15) == 255) ? 0 : EEPROM.read(15);
+        borders[2].groundTempDay = (EEPROM.read(16) == 255) ? 0 : EEPROM.read(16) - 40;
+        borders[2].groundTempNight = (EEPROM.read(17) == 255) ? 0 : EEPROM.read(17) - 40;
+        borders[2].lowAirHumDay = (EEPROM.read(18) == 255) ? 0 : EEPROM.read(18);
+        borders[2].lowAirHumNight = (EEPROM.read(19) == 255) ? 0 : EEPROM.read(19);
+        borders[2].highAirHumDay = (EEPROM.read(20) == 255) ? 0 : EEPROM.read(20);
+        borders[2].highAirHumNight = (EEPROM.read(21) == 255) ? 0 : EEPROM.read(21);
+        borders[2].lowAirTempDay = (EEPROM.read(22) == 255) ? 0 : EEPROM.read(22) - 40;
+        borders[2].lowAirTempNight = (EEPROM.read(23) == 255) ? 0 : EEPROM.read(23) - 40;
+        borders[2].highAirTempDay = (EEPROM.read(24) == 255) ? 0 : EEPROM.read(24) - 40;
+        borders[2].highAirTempNight = (EEPROM.read(25) == 255) ? 0 : EEPROM.read(25) - 40;
+        borders[2].lightLevelDay = (EEPROM.read(26) == 255) ? 0 : EEPROM.read(26);
+        borders[2].lightLevelNight = (EEPROM.read(27) == 255) ? 0 : EEPROM.read(127);  
+      }
     }
     // Функция для смены режима финкционирования
     void changeModeTo(int changeToMode)
@@ -723,6 +568,10 @@ class workObj{
       Serial.println("-------------------------------------------");
     }
     int getMode(){ return mode; }
+    int getRedLightMode(int blockNumber){
+      if (blockNumber == 1) return redLightMode_1;
+      else return redLightMode_2;
+    }
     int getMainLightMode(int block){
       if (block == 1) return lightModeMain1;
       if (block == 2) return lightModeMain2;
@@ -753,39 +602,42 @@ class workObj{
         }
       }
     }
-
+    long getRedLightTime(int blockNumber){
+      if (blockNumber == 1) return redLightDuration_1;
+      else return redLightDuration_2;
+    }
+    int getDayTime() { return timeNow; }
 };
 
+workObj obj1(1, false);
 
-void workObj::lightControl() {
-  
+
+void workObj::lightControl() {  
   if (getMode() == automatic){
     // Режим 1 Блока 1
     if (getMainLightMode(1) == timed){
       // Включение освещения по времени
-      if (getTimeBlynk() == getMainLightTime("start", 1)){
+      if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)) {
         light1_1.on();
       }
       // Выключение освещения по времени
-      if (getTimeBlynk() == getMainLightTime("end", 1)){
+      if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
         light1_1. off();
       }
     }
     // Режим 1 блока 2
     if (getMainLightMode(2) == timed){
       // Включение освещения по времени
-      if (getTimeBlynk() == getMainLightTime("start", 2)){
+      if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1)){
         light1_2.on();
       }
       // Выключение освещения по времени
-      if (getTimeBlynk() == getMainLightTime("end", 2)){
+      if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1)){
         light1_2.off();
       }
     }
   
   }
-
-
 
 }
 
@@ -794,16 +646,16 @@ void workObj::redLightControl(){
     // Режим 1 блока 1
     if (redLightMode_1 == timed){
       // Досветка за 'redLightDuration_1' секунд основного освещения
-      if (getTimeBlynk()+redLightDuration_1 == getMainLightTime("start", 1)){
+      if ((getTimeBlynk() + redLightDuration_1 > getMainLightTime("start", 1) - 1) && (getTimeBlynk() + redLightDuration_1 < getMainLightTime("start", 1) + 1)){
         light01_1.on();
       } // Выключение вместе с включением основного
-      else if (getTimeBlynk() == getMainLightTime("start", 1)){
+      else if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)){
         light01_1.off();
       } // Включение после выключения освного освещения
-      else if (getTimeBlynk() == getMainLightTime("end", 1)){
+      else if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
         light01_1.on();
       } // Выключение через 'redLightDuration_1'
-      else if (getTimeBlynk()-redLightDuration_1 == getMainLightTime("end", 1)){
+      else if ((getTimeBlynk() - redLightDuration_1 > getMainLightTime("end", 1) - 1) && (getTimeBlynk() - redLightDuration_1 < getMainLightTime("end", 1) + 1)){
         light01_1.off();
       }
 
@@ -811,16 +663,16 @@ void workObj::redLightControl(){
     // Режим 1 блока 2
     if (redLightMode_2 == timed){
       // Досветка за 'redLightDuration_1' секунд основного освещения
-      if (getTimeBlynk()+redLightDuration_2 == getMainLightTime("start", 2)){
+      if ((getTimeBlynk() + redLightDuration_2 > getMainLightTime("start", 2) - 1) && (getTimeBlynk() + redLightDuration_2 < getMainLightTime("start", 2) + 1)){
         light01_2.on();
       } // Выключение вместе с включением основного
-      else if (getTimeBlynk() == getMainLightTime("start", 2)){
+      else if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1)){
         light01_2.off();
       } // Включение после выключения освного освещения
-      else if (getTimeBlynk() == getMainLightTime("end", 2)){
+      else if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1)){
         light01_2.on();
       } // Выключение через 'redLightDuration_1'
-      else if (getTimeBlynk()-redLightDuration_2 == getMainLightTime("end", 2)){
+      else if ((getTimeBlynk() - redLightDuration_2 > getMainLightTime("end", 2) - 1) && (getTimeBlynk() - redLightDuration_2 < getMainLightTime("end", 2) + 1)){
         light01_2.off();
       }
 
@@ -891,6 +743,447 @@ void workObj::aerationControl(){
 
    }
 }
+
+
+
+String workObj::airHumCheckDay(){
+  String log = "";
+  int logicValues[4];
+  // bool condition1, condition2;
+  // condition1 - bool flag that shows if distrificator1_1 is now working
+  // condition2 - bool flag that shows if distrificator1_2 is now working
+  /*
+  If value is '1' - condition worked. 0 - not
+  [0] - steamgen1_1
+  [1] - steamgen1_2
+  [2] - distrificatio1_1
+  [3] - distrificator1_2
+  */
+
+
+  // ПОЛУЧЕНИЕ ЛОГИЧЕСКИХ СОСТОЯНИЙ ВЕНТИЛЯЦИИ
+
+  // получаем состояния вентиляции от функции airTempCheckXXXX();
+
+  // condition1 = (airTempFlags[2] == '2') ? true : false;
+  // condition2 = (airTempFlags[3] == '2') ? true : false;
+  // condition1 = bool(airTempFlags[2]);
+  // condition2 = bool(airTempFlags[3]);
+
+  // 
+
+  // ПАРОГЕНЕРАЦИЯ
+  // Блок 1
+  if (sensors1.airHum < borders[1].lowAirHumDay){
+    steamgen1_1.on();
+    logicValues[0] = 1;
+    if (debug){
+      log += "Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumDay) + ")\n";
+    }
+  } else {
+    steamgen1_1.off();
+    logicValues[0] = 0;
+    if (debug){
+      log += "Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumDay) + ")\n";
+    }
+  }
+
+  // Блок 2
+  if (sensors2.airHum < borders[2].lowAirHumDay){
+    steamgen1_2.on();
+    logicValues[1] = 1;
+    if (debug){
+      log += "Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumDay) + ")\n";
+    }
+  } else {
+    steamgen1_2.off();
+    logicValues[1] = 0;
+    if (debug){
+      log += "Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumDay) + ")\n";
+    }
+  }
+
+  // ВЕНТИЛЯЦИЯ
+  // Блок 1
+  if (sensors1.airHum > borders[1].highAirHumDay){
+    distrif1_1.on();
+    logicValues[2] = 1;
+    if (debug){
+      log += "distrificator1_1 -> ON (" + String(sensors1.airHum)  + " > " + String(borders[1].highAirHumDay) + ")\n";
+    }
+  } else if (sensors1.airTemp < borders[1].highAirTempDay) {
+    distrif1_1.off();
+    logicValues[2] = 0;
+    if (debug){
+      log += "distrificator1_1 -> OFF (" + String(sensors1.airHum)  + " < " + String(borders[1].highAirHumDay) + ")\n";;
+    }
+  } else {
+    // logicValues[2] = 2;
+    log += "distrificator1_1 -> LOCK\n";
+  }
+  // Блок 2
+  if (sensors2.airHum > borders[2].highAirHumDay){
+    distrif1_2.on();
+    logicValues[3] = 1;
+    if (debug){
+      log += "distrificator1_2 -> ON (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")\n";;
+    }
+  } else if (sensors2.airTemp < borders[2].highAirTempDay){
+    distrif1_2.off();
+    logicValues[3] = 0;
+    if (debug){
+      log += "distrificator1_2 -> OFF (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")\n";;
+    }
+  } else {
+    // logicValues[3] = 2;
+    log += "distrificator1_2 -> LOCK\n";
+  }
+
+  // ВЫВОД ЛОГОВ В КОНСОЛЬ
+  if (debug){
+    Serial.println(log);
+  }
+  return String(String(logicValues[0]) + 
+                String(logicValues[1]) + 
+                String(logicValues[2]) +
+                String(logicValues[3]));
+}
+
+
+String workObj::airHumCheckNight(){
+  String log = "";
+  int logicValues[4];
+  // bool condition1, condition2;
+  // condition1 - bool flag that shows if distrificator1_1 is now working
+  // condition2 - bool flag that shows if distrificator1_2 is now working
+  /*
+  If value is '1' - condition worked. 0 - not
+  [0] - steamgen1_1
+  [1] - steamgen1_2
+  [2] - distrificatio1_1
+  [3] - distrificator1_2
+  */
+
+
+  // ПОЛУЧЕНИЕ ЛОГИЧЕСКИХ СОСТОЯНИЙ ВЕНТИЛЯЦИИ
+
+  // получаем состояния вентиляции от функции airTempCheckXXXX();
+
+  // condition1 = bool(airTempFlags[2]);
+  // condition2 = bool(airTempFlags[3]);
+
+  // 
+
+
+  // ПАРОГЕНЕРАЦИЯ
+  // Блок 1
+  if (sensors1.airHum < borders[1].lowAirHumNight){
+    steamgen1_1.on();
+    logicValues[0] = 1;
+    if (debug){
+      log += "Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumNight) + ")\n";
+    }
+  } else {
+    steamgen1_1.off();
+    logicValues[0] = 0;
+    if (debug){
+      log += "Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumNight) + ")\n";
+    }
+  }
+
+  // Блок 2
+  if (sensors2.airHum < borders[2].lowAirHumNight){
+    steamgen1_2.on();
+    logicValues[1] = 1;
+    if (debug){
+      log += "Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumNight) + ")\n";
+    }
+  } else {
+    steamgen1_2.off();
+    logicValues[1] = 0;
+    if (debug){
+      log += "Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumNight) + ")\n";
+    }
+  }
+
+  // ВЕНТИЛЯЦИЯ
+  // Блок 1
+  if (sensors1.airHum > borders[1].highAirHumNight){
+    distrif1_1.on();
+    logicValues[2] = 1;
+    if (debug){
+      log += "distrificator1_1 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumNight) + ")\n";
+    }
+  } else if (sensors1.airTemp < borders[1].highAirTempNight) {
+    distrif1_1.off();
+    logicValues[2] = 0;
+    if (debug){
+      log += "distrificator1_1 -> OFF (" + String(sensors1.airHum) + " < " + String(borders[1].highAirHumNight) + ")\n";
+    }
+  } else {
+    log += "distrificator1_1 -> LOCK\n";
+  }
+  // Блок 2
+  if (sensors2.airHum > borders[2].highAirHumNight){
+    distrif1_2.on();
+    logicValues[3] = 1;
+    if (debug){
+      log += "distrificator1_2 -> ON (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumNight) + ")\n";
+    }
+  } else if (sensors2.airTemp < borders[2].highAirTempNight){
+    distrif1_2.off();
+    logicValues[3] = 0;
+    if (debug){
+      log += "distrificator1_2 -> OFF (" + String(sensors2.airHum) + " < " + String(borders[2].highAirHumNight) + ")\n";
+    }
+  } else {
+    log += "distrificator1_2 -> LOCK\n";
+  }
+  
+  // ВЫВОД ЛОГОВ В КОНСОЛЬ
+  if (debug){
+    Serial.println(log);
+  }
+  return String(String(logicValues[0]) + 
+                String(logicValues[1]) + 
+                String(logicValues[2]) +
+                String(logicValues[3]));
+}
+
+
+String workObj::airTempCheckDay(){
+  String log = "";
+  int logicValues[4];
+  // bool condition1, condition2;
+  // condition1 - bool flag that shows if distrificator1_1 is now working
+  // condition2 - bool flag that shows if distrificator1_2 is now working
+  /*
+  If value is '1' - condition worked. 0 - not
+  [0] - heater1_1
+  [1] - heater1_2
+  [2] - distrificator1_1
+  [3] - distrificator1_2
+  */
+
+
+  // ПОЛУЧЕНИЕ ЛОГИЧЕСКИХ СОСТОЯНИЙ ВЕНТИЛЯЦИИ
+
+  // получаем состояния вентиляции от функции airTempCheckXXXX();
+
+  // condition1 = (airHumFlags[2] == '2') ? true : false;
+  // condition2 = (airHumFlags[3] == '2') ? true : false;
+  // condition1 = bool(airHumFlags[2]);
+  // condition2 = bool(airHumFlags[3]);
+
+  // 
+
+
+  // ОБОГРЕВ
+  // Блок 1
+  if (sensors1.airTemp < borders[1].lowAirTempDay){
+    heater1_1.on();
+    logicValues[0] = 1;
+    if (debug){
+      log += "heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempDay) + ")\n";
+    }
+  } else {
+    heater1_1.off();
+    logicValues[0] = 0;
+    if (debug) {
+      log += "heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempDay) + "\n";
+    }
+  }
+  // Блок 2
+  if (sensors2.airTemp < borders[2].lowAirTempDay){
+    heater1_2.on();
+    logicValues[1] = 1;
+    if (debug) {
+      log += "heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempDay) + ")\n";
+    }
+  } else {
+    heater1_2.off();
+    logicValues[1] = 0;
+    if (debug){
+      log += "heater1_2 -> OFF (" + String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempDay) + ")\n";
+    }
+  }
+
+
+  // ВЕНТИЛЯЦИЯ
+  // Блок 1
+  if (sensors1.airTemp > borders[1].highAirTempDay){
+    distrif1_1.on();
+    logicValues[2] = 1;
+    if (debug){
+      log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempDay) + ")\n";
+    }
+  } else if (sensors1.airHum < borders[1].highAirHumDay){
+    distrif1_1.off();
+    logicValues[2] = 0;
+    if (debug){
+      log += "distrificator1_1 -> OFF (" +String(sensors1.airTemp) + " < " + String(borders[1].highAirTempDay) + ")\n";
+    }
+  } else {
+    // logicValues[2] = 2;
+    log += "distrificator1_1 -> LOCK\n";
+  }
+  // Блок 2
+  if (sensors2.airTemp > borders[2].highAirTempDay){
+    distrif1_2.on();
+    logicValues[3] = 1;
+    if (debug) {
+      log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempDay) + ")\n";
+    }
+  } else if (sensors2.airHum < borders[2].highAirHumDay){
+    distrif1_2.off();
+    logicValues[3] = 0;
+    if (debug) {
+      log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempDay) + ")\n";
+    }
+  } else {
+    // logicValues[3] = 2;
+    log += "distrificator1_2 -> LOCK\n";
+  }
+
+  // ВЫВОД ЛОГОВ В КОНСОЛЬ
+  if (debug){
+    Serial.println(log);
+  }
+  return String(String(logicValues[0]) +
+                String(logicValues[1]) +
+                String(logicValues[2]) +
+                String(logicValues[3]));
+}
+
+
+String workObj::airTempChechNight(){
+  String log = "";
+  int logicValues[4];
+  // bool condition1, condition2;
+  // condition1 - bool flag that shows if distrificator1_1 is now working
+  // condition2 - bool flag that shows if distrificator1_2 is now working
+  /*
+  If value is '1' - condition worked. 0 - not. 2 - edle
+  [0] - heater1_1
+  [1] - heater1_2
+  [2] - distrificator1_1
+  [3] - distrificator1_2
+  */
+
+
+  // ПОЛУЧЕНИЕ ЛОГИЧЕСКИХ СОСТОЯНИЙ ВЕНТИЛЯЦИИ
+
+  // получаем состояния вентиляции от функции airTempCheckXXXX();
+
+  // condition1 = (airHumFlags[2] == '2') ? true : false;
+  // condition2 = (airHumFlags[3] == '2') ? true : false;
+  // condition1 = bool(airHumFlags[2]);
+  // condition2 = bool(airHumFlags[3]);
+
+  // 
+
+
+  // ОБОГРЕВ
+  // Блок 1
+  if (sensors1.airTemp < borders[1].lowAirTempNight){
+    heater1_1.on();
+    logicValues[0] = 1;
+    if (debug){
+      log += "heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempNight) + ")\n";
+    }
+  } else {
+    heater1_1.off();
+    logicValues[0] = 0;
+    if (debug) {
+      log += "heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempNight) + ")\n";
+    }
+  }
+  // Блок 2
+  if (sensors2.airTemp < borders[2].lowAirTempNight){
+    heater1_2.on();
+    logicValues[1] = 1;
+    if (debug) {
+      log += "heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempNight) + ")\n";
+    }
+  } else {
+    heater1_2.off();
+    logicValues[1] = 0;
+    if (debug){
+      log += "heater1_2 -> OFF (" +String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempNight) = ")\n";
+    }
+  }
+
+
+  // ВЕНТИЛЯЦИЯ
+  // Блок 1
+  if (sensors1.airTemp > borders[1].highAirTempNight){
+    distrif1_1.on();
+    logicValues[2] = 1;
+    if (debug){
+      log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempNight) + ")\n";
+    }
+  } else if (sensors1.airHum < borders[1].highAirHumNight){
+    distrif1_1.off();
+    logicValues[2] = 0;
+    if (debug){
+      log += "distrificator1_1 -> OFF (" + String(sensors1.airTemp) + " < " + String(borders[1].highAirTempNight) + ")\n";
+    }
+  } else {
+    // logicValues[2] = 2;
+    log += "distrificator1_1 -> LOCK\n";
+  }
+  // Блок 2
+  if (sensors2.airTemp > borders[2].highAirTempNight){
+    distrif1_2.on();
+    logicValues[3] = 1;
+    if (debug) {
+      log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempNight) + ")\n";
+    }
+  } else if (sensors2.airHum < borders[2].highAirHumNight){
+    distrif1_2.off();
+    logicValues[3] = 0;
+    if (debug) {
+      log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempNight) + ")\n";
+    }
+  } else {
+    log += "distrificator1_2 -> LOCK\n";
+  }
+
+  // ВЫВОД ЛОГОВ В КОНСОЛЬ
+  if (debug){
+    Serial.println(log);
+  }
+  return String(String(logicValues[0]) +
+                String(logicValues[1]) +
+                String(logicValues[2]) +
+                String(logicValues[3]));
+}
+
+
+void workObj::groundHumCheckDay(){
+  
+  if ((sensors1.groundHum < borders[1].groundHumDay) || (sensors2.groundHum < borders[2].groundHumDay)){
+    pump04_1.on();
+  }
+  if ((sensors1.groundHum >= borders[1].groundHumDay) && (sensors2.groundHum >= borders[2].groundHumDay)){
+    pump04_1.off();
+  }
+
+}
+
+
+void workObj::groundHumCheckNight(){
+
+  if ((sensors1.groundHum < borders[1].groundHumNight) || (sensors2.groundHum < borders[2].groundHumNight)){
+    pump04_1.on();
+  }
+  if ((sensors1.groundHum >= borders[1].groundHumNight) && (sensors2.groundHum >= borders[2].groundHumNight)){
+    pump04_1.off();
+  }
+
+}
+
+
 // Прототип функции разбора пакета данных с блока сенсоров
 void parsePackage(packetData&, String);
 // Прототип функции отображения данных пакета в консоль
@@ -899,7 +1192,7 @@ void showPackage(packetData);
 // Зачаток функции для опроса всех блоков сенсоров разом
 void slavesQuery();
 
-workObj obj1(1, false);
+
 
 
 WidgetRTC rtcBlynk;
@@ -911,8 +1204,8 @@ BLYNK_CONNECTED() {
 //  000000  000000  00        00    00   00   00000
 //  00  00  00      00       0  0    00 00   00
 //  000000  000000  00      000000    000     0000
-//  00 00   00      00      00  00   00         00
-//  00  00  000000  000000  00  00  00       00000
+//  00 00   00      00      00  00    00        00
+//  00  00  000000  000000  00  00   00      00000
 
 // Функиця для получения режима от Blynk
 BLYNK_WRITE(V1)
@@ -1203,17 +1496,17 @@ BLYNK_WRITE(V56){
   obj1.setBorder("highAirHumDay", a, 2);
   obj1.saveBordersToEEPROM(2, "highAirHumDay");
 }
-// highAirHumNight1
+// highAirHumNight2
 BLYNK_WRITE(V57){
   float a = param.asFloat();
-  obj1.setBorder("highAirHumNight", a, 1);
-  obj1.saveBordersToEEPROM(1, "highAirHumNight");
+  obj1.setBorder("highAirHumNight", a, 2);
+  obj1.saveBordersToEEPROM(2, "highAirHumNight");
 }
-// lowAirTempDay1
+// lowAirTempDay2
 BLYNK_WRITE(V58){
   float a = param.asFloat();
-  obj1.setBorder("lowAirTempDay", a, 1);
-  obj1.saveBordersToEEPROM(1, "lowAirTempDay");
+  obj1.setBorder("lowAirTempDay", a, 2);
+  obj1.saveBordersToEEPROM(2, "lowAirTempDay");
 }
 // lowAirTempNight2
 BLYNK_WRITE(V59){
@@ -1245,10 +1538,6 @@ BLYNK_WRITE(V63){
   obj1.setBorder("lightLevelNight", a, 2);
   obj1.saveBordersToEEPROM(2, "lightLevelNight");
 }
-
-
-
-
 
 
 // Режимы основного освещения блока 1
@@ -1355,6 +1644,7 @@ BLYNK_WRITE(V69){
 void flagTrue();
 void request();
 void sentToBlynk();
+
 void setup() {
   // Очень плохое решение проблемы проседания питания при старте WiFi
   // Но другого у меня нет. Так что будет пока так.
@@ -1365,8 +1655,8 @@ void setup() {
 
   EEPROM.begin(50); // Init 30 bytes of EEPROM
   Wire.begin(21, 22);        // Join I2C bus
-  pcf_1.begin(21, 22);       // Connect PCF8574_1 pin extension
-  pcf_2.begin(21, 22);       // Connect PCF8574_2 pin extension
+  pcf_1.begin();       // Connect PCF8574_1 pin extension
+  pcf_2.begin();       // Connect PCF8574_2 pin extension
   Serial.begin(115200);  // start serial for output
   obj1.restoreBordersFromEEPROM(1);
   obj1.restoreBordersFromEEPROM(2);
@@ -1375,7 +1665,7 @@ void setup() {
   eeprom.setInterval(1000L, flagTrue);
   requestSlave.setInterval(5000L, request);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
-  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
+  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,115), 8080);
   // packetData data[slavesNumber]; 
   // Обновляем переменную времени
   obj1.getTimeBlynk();
@@ -1385,8 +1675,16 @@ void setup() {
 }
 
 void loop() {
+  bool showBorders = false; // Отображение в консоли граничных значений
+  bool showRedLightModes = false; // Отображение в консоли режимов красного света
+  bool onAuto = true; // Включение обработки автоматического режима
+  bool requests = true; // Получение данных от slave
+  bool showRedLightDurations = false; // Вывод в консоль длительностей красной досветки
+
   eeprom.run();
-  requestSlave.run();
+  if (requests == true){
+    requestSlave.run();
+  }
   if (firstConnectedFlag == true){
     obj1.dropTempTimeToNow();
     firstConnectedFlag = false;
@@ -1395,23 +1693,53 @@ void loop() {
   obj1.calculateTimeBlynk(); // Перевоит время из часов, минут и секунд в секунды
   obj1.useRelays(); // Применяем значения реле
   
+  // Сохранение длительности аэрации и режимов в EEPROM
   if (saveFlag == true){
-    // Serial.println("saved");
     obj1.saveModesAndAerToEEPROM();
     saveFlag = false;
   }
   
-  // Serial.println("Time now : " + String(hour()) + ":" + String(minute()) + ":" + String(second()));
-  if (obj1.getMode() == automatic){
-    obj1.airHumFlag = obj1.airHumCheck();
-    obj1.airTempFlag = obj1.airTempCheck();
+  // obj1.sensors1.airTemp = 20;
+  // obj1.sensors1.airHum = 30;
+  // obj1.sensors2.airTemp = 20;
+  // obj1.sensors2.airHum = 30;
+  
+
+  if (showRedLightDurations == true){
+    Serial.println("------------------------------");
+    Serial.println("Red light duration 1 :" + String(obj1.getRedLightTime(1)));
+    Serial.println("Red light duration 2 :" + String(obj1.getRedLightTime(2)));
+  }
+  if (showRedLightModes == true){
+    Serial.println("------------------------------");
+    Serial.println("Red light mode 1: " + String(obj1.getRedLightMode(1)));
+    Serial.println("Red light mode 2: " + String(obj1.getRedLightMode(2)));
+  }
+  if (showBorders == true){
+    Serial.println("------------------------------");
+    obj1.showBorders(1);
+    // obj1.showBorders(2);
+  }
+  if (onAuto == true){
+    if (obj1.getMode() == automatic){
+
+    // Новые функции
+    if (obj1.getDayTime() == dayTime){
+      obj1.airHumFlags = obj1.airTempCheckDay();
+      obj1.airTempFlags = obj1.airHumCheckDay();
+      obj1.groundHumCheckDay();
+    } 
+    if (obj1.getDayTime() == night){
+      obj1.airHumFlags = obj1.airHumCheckNight();
+      obj1.airTempFlags = obj1.airHumCheckNight();
+      obj1.groundHumCheckNight();
+    }
+    
     obj1.lightControl();
     obj1.redLightControl();
     obj1.aerationControl();
-    // obj1.groundHumidControl();
-    // obj1.lightSeparateControl();
   }
-
+  }
 
 }
 
@@ -1424,7 +1752,6 @@ void request(){
   while(Wire.available() > 0){
     char c = Wire.read();
     arrData += c;
-    // if (debug) Serial.print(c);
   }
   if (debug) Serial.println();
   // Запись данных в объект sensors1
@@ -1637,6 +1964,7 @@ void parsePackage(packetData& d1, String arrData){
   // d1.airHum = d1.airTemp;
   // d1.airTemp = temp;
 }
+
 // Функция для отображения данных пакета в консоль
 void showPackage(packetData p1){
   Serial.println("/-----------PACKAGE-DATA-----------");

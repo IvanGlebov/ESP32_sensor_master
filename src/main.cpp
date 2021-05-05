@@ -21,9 +21,26 @@
 // Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84
 // rwuSDq5orOfSV8nF75xsQT7YSR_e2Xqf
 
+// name
+// 3236
+// pass 
+// 1593578426
+// type
+// key_mgmt=WPA2-Personal
+// 10.1.92.35
+// 
+
+
+// 45.80.44.107
+// 9443 
+// 
+// Kee is the same as at home server (a bit obvious)
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
-char ssid[] = "Keenetic-4926"; // Keenetic-4926
-char pass[] = "Q4WmFQTa"; // Q4WmFQTa
+// char ssid[] = "3236"; // prod
+char ssid[] = "Keenetic-4926"; // home
+// char pass[] = "1593578426"; // prod
+char pass[] = "Q4WmFQTa"; // home
+
 
 PCF8574 pcf_1(0x20);
 PCF8574 pcf_2(0x21);
@@ -133,28 +150,35 @@ class relay{
 };
 
 
-
-
 relay pump04_1 = relay(1, "Pump0.4Kv-1", 10); // Помпа капельного полива
 
-relay valve1_1 = relay(2, "Valve1-1", 11); // Вентиль верхней аэрации блока 1
-relay valve1_2 = relay(3, "Valve1-2", 12); // Вентиль верхней аэрации блока 2
+// Swapped with heaters
+relay valve1_1 = relay(14, "Valve1-1", 11); // Вентиль верхней аэрации блока 1
+// incorrect
+relay valve1_2 = relay(4, "Valve1-2", 12); // Вентиль верхней аэрации блока 2
+// объединение //
+// relay valve2_1 = relay(4, "Valve2-1", 13); // Вентиль нижней аэрации блока 1
+// relay valve2_2 = relay(5, "Valve2-2", 14); // Вентиль нижней аэрации блока 2
 
-relay valve2_1 = relay(4, "Valve2-1", 13); // Вентиль нижней аэрации блока 1
+relay valve2_1 = relay(15, "Valve2-1", 13); // Вентиль нижней аэрации блока 1
+// incorrect
 relay valve2_2 = relay(5, "Valve2-2", 14); // Вентиль нижней аэрации блока 2
+
 
 relay light1_1 = relay(6, "Light1Kv-1", 15); // Основное освещение блока 1
 relay light1_2 = relay(7, "Light1Kv-2", 16); // Основное отвещение блока 2
 relay light01_1 = relay(8, "Light0.1KV-1", 17); // Длинный красный свет блока 1
 relay light01_2 = relay(9, "Light0.1Kv-2", 18); // Длинный красный свет блока 2
-relay distrif1_1 = relay(10, "Distrificator1Kv-1", 19); // Вентилятор 1
-relay distrif1_2 = relay(11, "Distrificator1Kv-1", 20); // Вентилятор 2
+
+// Moved to 4/5 relays
+relay distrif1_1 = relay(4, "Distrificator1Kv-1", 19); // Вентилятор 1
+relay distrif1_2 = relay(5, "Distrificator1Kv-1", 20); // Вентилятор 2
 
 relay steamgen1_1 = relay(12, "SteamGenerator1Kv-1", 21); // Парогенератор 1
 relay steamgen1_2 = relay(13, "SteamGenerator1Kv-2", 22); // Парогенератор 2
 
-relay heater1_1 = relay(14, "Hearet1Kv-1", 23); // Отопление 1
-relay heater1_2 = relay(15, "Heater1kv_2", 24); // Отопление 2
+relay heater1_1 = relay(2, "Hearet1Kv-1", 23); // Отопление 1
+relay heater1_2 = relay(3, "Heater1kv_2", 24); // Отопление 2
 // relay siod1_1 = relay(14, "SIOD1Kv");
 
 
@@ -615,6 +639,10 @@ workObj obj1(1, false);
 void workObj::lightControl() {  
   if (getMode() == automatic){
     // Режим 1 Блока 1
+    // logic description
+    // t - time ti turn on/off
+    // Light will turn on/off in the interval below
+    // t-1 < t < t+1
     if (getMainLightMode(1) == timed){
       // Включение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)) {
@@ -646,7 +674,7 @@ void workObj::redLightControl(){
     // Режим 1 блока 1
     if (redLightMode_1 == timed){
       // Досветка за 'redLightDuration_1' секунд основного освещения
-      if ((getTimeBlynk() + redLightDuration_1 > getMainLightTime("start", 1) - 1) && (getTimeBlynk() + redLightDuration_1 < getMainLightTime("start", 1) + 1)){
+      if ((getTimeBlynk() + redLightDuration_1 * 60 > getMainLightTime("start", 1) - 1) && (getTimeBlynk() + redLightDuration_1 * 60 < getMainLightTime("start", 1) + 1)){
         light01_1.on();
       } // Выключение вместе с включением основного
       else if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)){
@@ -655,7 +683,7 @@ void workObj::redLightControl(){
       else if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
         light01_1.on();
       } // Выключение через 'redLightDuration_1'
-      else if ((getTimeBlynk() - redLightDuration_1 > getMainLightTime("end", 1) - 1) && (getTimeBlynk() - redLightDuration_1 < getMainLightTime("end", 1) + 1)){
+      else if ((getTimeBlynk() - redLightDuration_1 * 60 > getMainLightTime("end", 1) - 1) && (getTimeBlynk() - redLightDuration_1 * 60 < getMainLightTime("end", 1) + 1)){
         light01_1.off();
       }
 
@@ -663,7 +691,7 @@ void workObj::redLightControl(){
     // Режим 1 блока 2
     if (redLightMode_2 == timed){
       // Досветка за 'redLightDuration_1' секунд основного освещения
-      if ((getTimeBlynk() + redLightDuration_2 > getMainLightTime("start", 2) - 1) && (getTimeBlynk() + redLightDuration_2 < getMainLightTime("start", 2) + 1)){
+      if ((getTimeBlynk() + redLightDuration_2 * 60 > getMainLightTime("start", 2) - 1) && (getTimeBlynk() + redLightDuration_2 * 60 < getMainLightTime("start", 2) + 1)){
         light01_2.on();
       } // Выключение вместе с включением основного
       else if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1)){
@@ -672,7 +700,7 @@ void workObj::redLightControl(){
       else if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1)){
         light01_2.on();
       } // Выключение через 'redLightDuration_1'
-      else if ((getTimeBlynk() - redLightDuration_2 > getMainLightTime("end", 2) - 1) && (getTimeBlynk() - redLightDuration_2 < getMainLightTime("end", 2) + 1)){
+      else if ((getTimeBlynk() - redLightDuration_2 * 60 > getMainLightTime("end", 2) - 1) && (getTimeBlynk() - redLightDuration_2 * 60 < getMainLightTime("end", 2) + 1)){
         light01_2.off();
       }
 
@@ -691,7 +719,7 @@ void workObj::aerationControl(){
         // Serial.println("aerTopOn");
       }
       if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true)){
-        aerTempTimeTop_1 = timeNowBlynk + m1_1;
+        aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
         valve1_1.off();
         aerTopFlag_1 = false;
         // Serial.println("aerTopOff");
@@ -705,7 +733,7 @@ void workObj::aerationControl(){
         // Serial.println("aerDownOn");
       }
       if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == true)){
-        aerTempTimeDown_1 = timeNowBlynk + m1_2;
+        aerTempTimeDown_1 = timeNowBlynk + m1_2 * 60;
         valve2_1.off();
         aerDownFlag_1 = false;
         // Serial.println("aerDownOff");
@@ -720,7 +748,7 @@ void workObj::aerationControl(){
         // Serial.println("aerTopOn");
       }
       if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == true)){
-        aerTempTimeTop_2 = timeNowBlynk + m2_1;
+        aerTempTimeTop_2 = timeNowBlynk + m2_1 * 60;
         valve1_2.off();
         aerTopFlag_2 = false;
         // Serial.println("aerTopOff");
@@ -734,17 +762,13 @@ void workObj::aerationControl(){
         // Serial.println("aerTopOn");
       }
       if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == true)){
-        aerTempTimeDown_2 = timeNowBlynk + m2_2;
+        aerTempTimeDown_2 = timeNowBlynk + m2_2 * 60;
         valve2_2.off();
         aerDownFlag_2 = false;
         // Serial.println("aerTopOff");
       }
-
-
    }
 }
-
-
 
 String workObj::airHumCheckDay(){
   String log = "";
@@ -849,7 +873,6 @@ String workObj::airHumCheckDay(){
                 String(logicValues[3]));
 }
 
-
 String workObj::airHumCheckNight(){
   String log = "";
   int logicValues[4];
@@ -949,7 +972,6 @@ String workObj::airHumCheckNight(){
                 String(logicValues[2]) +
                 String(logicValues[3]));
 }
-
 
 String workObj::airTempCheckDay(){
   String log = "";
@@ -1213,7 +1235,10 @@ BLYNK_WRITE(V1)
   int a = param.asInt();
   // Если всё в штатном режиме, то меняем режим по указу Blynk
   if (obj1.getMode() != alert)
-    obj1.changeModeTo(a);
+  // For using segmented switch instead of sider 
+  // slider gives any walue when segmented switch gives value from 1 and futher
+    obj1.changeModeTo(a-1);
+    Serial.println("Mode to: " + String(a-1) + ". Value from Blynk: " + String(a));
 };
 
 // Реле 1. Можно управлять с Blynk только в режиме manual
@@ -1651,8 +1676,6 @@ void setup() {
   // Хорошо бы сделать отдельное питание на 3.3 линию в 3.4В
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
-
-
   EEPROM.begin(50); // Init 30 bytes of EEPROM
   Wire.begin(21, 22);        // Join I2C bus
   pcf_1.begin();       // Connect PCF8574_1 pin extension
@@ -1665,7 +1688,10 @@ void setup() {
   eeprom.setInterval(1000L, flagTrue);
   requestSlave.setInterval(5000L, request);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
-  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,115), 8080);
+  // 10.1.92.35
+  // Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
+  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
+
   // packetData data[slavesNumber]; 
   // Обновляем переменную времени
   obj1.getTimeBlynk();
@@ -1678,7 +1704,7 @@ void loop() {
   bool showBorders = false; // Отображение в консоли граничных значений
   bool showRedLightModes = false; // Отображение в консоли режимов красного света
   bool onAuto = true; // Включение обработки автоматического режима
-  bool requests = true; // Получение данных от slave
+  bool requests = false; // Получение данных от slave
   bool showRedLightDurations = false; // Вывод в консоль длительностей красной досветки
 
   eeprom.run();
@@ -1846,11 +1872,11 @@ void setRelay(relay r1){
       break;
     case 15:
       pcf_2.write(6, !r1.returnState());
-      Serial.println("pcf_2_p6 is now " + String(!r1.returnState()));
+      // Serial.println("pcf_2_p6 is now " + String(!r1.returnState()));
       break;
     case 16:
       pcf_2.write(7, !r1.returnState());
-      Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
+      // Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
       break;
     default:
       Serial.println("Error no such relay. Requered number :" + String(r1.number));

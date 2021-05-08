@@ -36,10 +36,10 @@
 // 
 // Kee is the same as at home server (a bit obvious)
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
-// char ssid[] = "3236"; // prod
-char ssid[] = "Keenetic-4926"; // home
-// char pass[] = "1593578426"; // prod
-char pass[] = "Q4WmFQTa"; // home
+char ssid[] = "3236"; // prod
+// char ssid[] = "Keenetic-4926"; // home
+char pass[] = "1593578426"; // prod
+// char pass[] = "Q4WmFQTa"; // home
 
 
 PCF8574 pcf_1(0x20);
@@ -76,6 +76,54 @@ V25 - relay16 control
 
 BlynkTimer eeprom;
 BlynkTimer requestSlave;
+
+WidgetTerminal terminal(V0);
+
+// Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
+class logger {
+  private:
+    char workMode = 'M';
+    char messageType = 'S';
+    int messageNumber = 0;
+    bool sendToTerminal = true;
+    bool showLogs = true;
+  public:
+    logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs): workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs) {};
+    void setMode(char mode) { workMode = mode; }
+    void setType(char type) { messageType = type; }
+    void print(String text);
+    void println(String text);
+};
+
+void logger::println(String text) {
+  String output;
+  output += "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
+  output += text;
+  if (showLogs){
+    if (sendToTerminal == true){
+      terminal.println(output);
+      terminal.flush();  
+    }
+    Serial.println(output);
+  }
+  messageNumber++;
+}
+
+void logger::print(String text) {
+  String output;
+  output += "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
+  output += text;
+  if (showLogs){
+    if (sendToTerminal == true){
+      terminal.print(output);
+      terminal.flush();  
+    }
+    Serial.print(output);
+  }
+  messageNumber++;
+}
+
+logger logging('M', 'S', true, true);
 
 // Structure for packet variables saving
 struct packetData{
@@ -142,7 +190,8 @@ class relay{
     relay(int setNumber, String relayName, int virtualPinNumber) { number = setNumber, name = relayName, virtualPin = virtualPinNumber; };
     void setBindpin(int setNumber){ number = setNumber; }
     void setState(bool newState){ state  = newState; }
-    void printInfo(){ Serial.println("Relay with name " + name + " on pin " + String(number) + " is " + (state)? String(true) : String(false)); }
+    void printInfo(){ Serial.println("Relay with name " + name + " on pin " + String(number) + " is " + (state)? String(true) : String(false)); 
+      }
     void on(){ state = true;  }
     void off(){ state = false;  }
     bool returnState(){ return state; }
@@ -646,10 +695,17 @@ void workObj::lightControl() {
     if (getMainLightMode(1) == timed){
       // Включение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)) {
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light1_1 turned on");
         light1_1.on();
+
       }
       // Выключение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light1_1 turned off");
         light1_1. off();
       }
     }
@@ -657,10 +713,16 @@ void workObj::lightControl() {
     if (getMainLightMode(2) == timed){
       // Включение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1)){
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light1_2 turned on");
         light1_2.on();
       }
       // Выключение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1)){
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light1_2 turned off");
         light1_2.off();
       }
     }
@@ -676,15 +738,27 @@ void workObj::redLightControl(){
       // Досветка за 'redLightDuration_1' секунд основного освещения
       if ((getTimeBlynk() + redLightDuration_1 * 60 > getMainLightTime("start", 1) - 1) && (getTimeBlynk() + redLightDuration_1 * 60 < getMainLightTime("start", 1) + 1)){
         light01_1.on();
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light01_1 turned on");
       } // Выключение вместе с включением основного
       else if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)){
         light01_1.off();
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light01_1 turned off");
       } // Включение после выключения освного освещения
       else if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
         light01_1.on();
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light01_1 turned on");
       } // Выключение через 'redLightDuration_1'
       else if ((getTimeBlynk() - redLightDuration_1 * 60 > getMainLightTime("end", 1) - 1) && (getTimeBlynk() - redLightDuration_1 * 60 < getMainLightTime("end", 1) + 1)){
         light01_1.off();
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Light01_1 turned off");
       }
 
     }
@@ -716,12 +790,18 @@ void workObj::aerationControl(){
         aerTempTimeTop_1 = timeNowBlynk + n1_1;
         valve1_1.on();
         aerTopFlag_1 = true;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve1_1 opened");
         // Serial.println("aerTopOn");
       }
       if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true)){
         aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
         valve1_1.off();
         aerTopFlag_1 = false;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve1_1 closed");
         // Serial.println("aerTopOff");
       }
 
@@ -730,12 +810,18 @@ void workObj::aerationControl(){
         aerTempTimeDown_1 = timeNowBlynk + n1_2;
         valve2_1.on();
         aerDownFlag_1 = true;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve2_1 opened");
         // Serial.println("aerDownOn");
       }
       if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == true)){
         aerTempTimeDown_1 = timeNowBlynk + m1_2 * 60;
         valve2_1.off();
         aerDownFlag_1 = false;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve2_1 closed");
         // Serial.println("aerDownOff");
       }
 
@@ -745,12 +831,18 @@ void workObj::aerationControl(){
         aerTempTimeTop_2 = timeNowBlynk + n2_1;
         valve1_2.on();
         aerTopFlag_2 = true;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve1_2 opened");
         // Serial.println("aerTopOn");
       }
       if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == true)){
         aerTempTimeTop_2 = timeNowBlynk + m2_1 * 60;
         valve1_2.off();
         aerTopFlag_2 = false;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve1_2 closed");
         // Serial.println("aerTopOff");
       }
 
@@ -759,19 +851,25 @@ void workObj::aerationControl(){
         aerTempTimeDown_2 = timeNowBlynk + n2_2;
         valve2_2.on();
         aerDownFlag_2 = true;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve2_2 opened");
         // Serial.println("aerTopOn");
       }
       if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == true)){
         aerTempTimeDown_2 = timeNowBlynk + m2_2 * 60;
         valve2_2.off();
         aerDownFlag_2 = false;
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Valve2_2 closed");
         // Serial.println("aerTopOff");
       }
    }
 }
 
 String workObj::airHumCheckDay(){
-  String log = "";
+  // String log = "";
   int logicValues[4];
   // bool condition1, condition2;
   // condition1 - bool flag that shows if distrificator1_1 is now working
@@ -801,30 +899,30 @@ String workObj::airHumCheckDay(){
   if (sensors1.airHum < borders[1].lowAirHumDay){
     steamgen1_1.on();
     logicValues[0] = 1;
-    if (debug){
-      log += "Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumDay) + ")");
   } else {
     steamgen1_1.off();
     logicValues[0] = 0;
-    if (debug){
-      log += "Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumDay) + ")");
   }
 
   // Блок 2
   if (sensors2.airHum < borders[2].lowAirHumDay){
     steamgen1_2.on();
     logicValues[1] = 1;
-    if (debug){
-      log += "Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumDay) + ")");   
   } else {
     steamgen1_2.off();
     logicValues[1] = 0;
-    if (debug){
-      log += "Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumDay) + ")");   
   }
 
   // ВЕНТИЛЯЦИЯ
@@ -832,49 +930,50 @@ String workObj::airHumCheckDay(){
   if (sensors1.airHum > borders[1].highAirHumDay){
     distrif1_1.on();
     logicValues[2] = 1;
-    if (debug){
-      log += "distrificator1_1 -> ON (" + String(sensors1.airHum)  + " > " + String(borders[1].highAirHumDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Distrificator1_1 -> ON (" + String(sensors1.airHum)  + " > " + String(borders[1].highAirHumDay) + ")");   
   } else if (sensors1.airTemp < borders[1].highAirTempDay) {
     distrif1_1.off();
     logicValues[2] = 0;
-    if (debug){
-      log += "distrificator1_1 -> OFF (" + String(sensors1.airHum)  + " < " + String(borders[1].highAirHumDay) + ")\n";;
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Distrificator1_1 -> OFF (" + String(sensors1.airHum)  + " < " + String(borders[1].highAirHumDay) + ")");   
   } else {
     // logicValues[2] = 2;
-    log += "distrificator1_1 -> LOCK\n";
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Distrificator1_1 -> LOCK");   
   }
   // Блок 2
   if (sensors2.airHum > borders[2].highAirHumDay){
     distrif1_2.on();
     logicValues[3] = 1;
-    if (debug){
-      log += "distrificator1_2 -> ON (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")\n";;
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Distrificator1_2 -> ON (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")");
   } else if (sensors2.airTemp < borders[2].highAirTempDay){
     distrif1_2.off();
     logicValues[3] = 0;
-    if (debug){
-      log += "distrificator1_2 -> OFF (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")\n";;
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Distrificator1_2 -> OFF (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")");
   } else {
     // logicValues[3] = 2;
-    log += "distrificator1_2 -> LOCK\n";
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Distrificator1_2 -> LOCK");   
   }
 
-  // ВЫВОД ЛОГОВ В КОНСОЛЬ
-  if (debug){
-    Serial.println(log);
-  }
   return String(String(logicValues[0]) + 
                 String(logicValues[1]) + 
                 String(logicValues[2]) +
                 String(logicValues[3]));
 }
 
+// Not refactoref for now log system
 String workObj::airHumCheckNight(){
-  String log = "";
+  // String log = "";
   int logicValues[4];
   // bool condition1, condition2;
   // condition1 - bool flag that shows if distrificator1_1 is now working
@@ -903,30 +1002,30 @@ String workObj::airHumCheckNight(){
   if (sensors1.airHum < borders[1].lowAirHumNight){
     steamgen1_1.on();
     logicValues[0] = 1;
-    if (debug){
-      log += "Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumNight) + ")\n";
+    // }
   } else {
     steamgen1_1.off();
     logicValues[0] = 0;
-    if (debug){
-      log += "Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumNight) + ")\n";
+    // }
   }
 
   // Блок 2
   if (sensors2.airHum < borders[2].lowAirHumNight){
     steamgen1_2.on();
     logicValues[1] = 1;
-    if (debug){
-      log += "Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumNight) + ")\n";
+    // }
   } else {
     steamgen1_2.off();
     logicValues[1] = 0;
-    if (debug){
-      log += "Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumNight) + ")\n";
+    // }
   }
 
   // ВЕНТИЛЯЦИЯ
@@ -934,39 +1033,40 @@ String workObj::airHumCheckNight(){
   if (sensors1.airHum > borders[1].highAirHumNight){
     distrif1_1.on();
     logicValues[2] = 1;
-    if (debug){
-      log += "distrificator1_1 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "distrificator1_1 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumNight) + ")\n";
+    // }
   } else if (sensors1.airTemp < borders[1].highAirTempNight) {
     distrif1_1.off();
     logicValues[2] = 0;
-    if (debug){
-      log += "distrificator1_1 -> OFF (" + String(sensors1.airHum) + " < " + String(borders[1].highAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "distrificator1_1 -> OFF (" + String(sensors1.airHum) + " < " + String(borders[1].highAirHumNight) + ")\n";
+    // }
   } else {
-    log += "distrificator1_1 -> LOCK\n";
+    // log += "distrificator1_1 -> LOCK\n";
   }
   // Блок 2
   if (sensors2.airHum > borders[2].highAirHumNight){
     distrif1_2.on();
     logicValues[3] = 1;
-    if (debug){
-      log += "distrificator1_2 -> ON (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumNight) + ")\n";
-    }
+    // if (debug){
+      // log += "distrificator1_2 -> ON (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumNight) + ")\n";
+    // }
   } else if (sensors2.airTemp < borders[2].highAirTempNight){
     distrif1_2.off();
     logicValues[3] = 0;
-    if (debug){
-      log += "distrificator1_2 -> OFF (" + String(sensors2.airHum) + " < " + String(borders[2].highAirHumNight) + ")\n";
+    // if (debug){
+      // log += "distrificator1_2 -> OFF (" + String(sensors2.airHum) + " < " + String(borders[2].highAirHumNight) + ")\n";
     }
-  } else {
-    log += "distrificator1_2 -> LOCK\n";
-  }
+  // } 
+  // else {
+    // log += "distrificator1_2 -> LOCK\n";
+  // }
   
   // ВЫВОД ЛОГОВ В КОНСОЛЬ
-  if (debug){
-    Serial.println(log);
-  }
+  // if (debug){
+    // Serial.println(log);
+  // }
   return String(String(logicValues[0]) + 
                 String(logicValues[1]) + 
                 String(logicValues[2]) +
@@ -974,7 +1074,7 @@ String workObj::airHumCheckNight(){
 }
 
 String workObj::airTempCheckDay(){
-  String log = "";
+  // String log = "";
   int logicValues[4];
   // bool condition1, condition2;
   // condition1 - bool flag that shows if distrificator1_1 is now working
@@ -1005,29 +1105,29 @@ String workObj::airTempCheckDay(){
   if (sensors1.airTemp < borders[1].lowAirTempDay){
     heater1_1.on();
     logicValues[0] = 1;
-    if (debug){
-      log += "heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempDay) + ")");
   } else {
     heater1_1.off();
     logicValues[0] = 0;
-    if (debug) {
-      log += "heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempDay) + "\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempDay) + ")");
   }
   // Блок 2
   if (sensors2.airTemp < borders[2].lowAirTempDay){
     heater1_2.on();
     logicValues[1] = 1;
-    if (debug) {
-      log += "heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempDay) + ")");
   } else {
     heater1_2.off();
     logicValues[1] = 0;
-    if (debug){
-      log += "heater1_2 -> OFF (" + String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempDay) + ")\n";
-    }
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Heater1_2 -> OFF (" + String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempDay) + ")");
   }
 
 
@@ -1036,48 +1136,49 @@ String workObj::airTempCheckDay(){
   if (sensors1.airTemp > borders[1].highAirTempDay){
     distrif1_1.on();
     logicValues[2] = 1;
-    if (debug){
-      log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempDay) + ")\n";
-    }
+    // if (debug){
+      // log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempDay) + ")\n";
+    // }
   } else if (sensors1.airHum < borders[1].highAirHumDay){
     distrif1_1.off();
     logicValues[2] = 0;
-    if (debug){
-      log += "distrificator1_1 -> OFF (" +String(sensors1.airTemp) + " < " + String(borders[1].highAirTempDay) + ")\n";
-    }
+    // if (debug){
+      // log += "distrificator1_1 -> OFF (" +String(sensors1.airTemp) + " < " + String(borders[1].highAirTempDay) + ")\n";
+    // }
   } else {
     // logicValues[2] = 2;
-    log += "distrificator1_1 -> LOCK\n";
+    // log += "distrificator1_1 -> LOCK\n";
   }
   // Блок 2
   if (sensors2.airTemp > borders[2].highAirTempDay){
     distrif1_2.on();
     logicValues[3] = 1;
-    if (debug) {
-      log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempDay) + ")\n";
-    }
+    // if (debug) {
+      // log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempDay) + ")\n";
+    // }
   } else if (sensors2.airHum < borders[2].highAirHumDay){
     distrif1_2.off();
     logicValues[3] = 0;
-    if (debug) {
-      log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempDay) + ")\n";
-    }
-  } else {
+    // if (debug) {
+      // log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempDay) + ")\n";
+    // }
+  } 
+  // else {
     // logicValues[3] = 2;
-    log += "distrificator1_2 -> LOCK\n";
-  }
+    // log += "distrificator1_2 -> LOCK\n";
+  // }
 
   // ВЫВОД ЛОГОВ В КОНСОЛЬ
-  if (debug){
-    Serial.println(log);
-  }
+  // if (debug){
+    // Serial.println(log);
+  // }
   return String(String(logicValues[0]) +
                 String(logicValues[1]) +
                 String(logicValues[2]) +
                 String(logicValues[3]));
 }
 
-
+// Not refactoref for now log system
 String workObj::airTempChechNight(){
   String log = "";
   int logicValues[4];
@@ -1110,29 +1211,29 @@ String workObj::airTempChechNight(){
   if (sensors1.airTemp < borders[1].lowAirTempNight){
     heater1_1.on();
     logicValues[0] = 1;
-    if (debug){
-      log += "heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempNight) + ")\n";
-    }
+    // if (debug){
+      // log += "heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempNight) + ")\n";
+    // }
   } else {
     heater1_1.off();
     logicValues[0] = 0;
-    if (debug) {
-      log += "heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempNight) + ")\n";
-    }
+    // if (debug) {
+      // log += "heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempNight) + ")\n";
+    // }
   }
   // Блок 2
   if (sensors2.airTemp < borders[2].lowAirTempNight){
     heater1_2.on();
     logicValues[1] = 1;
-    if (debug) {
-      log += "heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempNight) + ")\n";
-    }
+    // if (debug) {
+      // log += "heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempNight) + ")\n";
+    // }
   } else {
     heater1_2.off();
     logicValues[1] = 0;
-    if (debug){
-      log += "heater1_2 -> OFF (" +String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempNight) = ")\n";
-    }
+    // if (debug){
+      // log += "heater1_2 -> OFF (" +String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempNight) = ")\n";
+    // }
   }
 
 
@@ -1141,40 +1242,42 @@ String workObj::airTempChechNight(){
   if (sensors1.airTemp > borders[1].highAirTempNight){
     distrif1_1.on();
     logicValues[2] = 1;
-    if (debug){
-      log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempNight) + ")\n";
-    }
+    // if (debug){
+      // log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempNight) + ")\n";
+    // }
   } else if (sensors1.airHum < borders[1].highAirHumNight){
     distrif1_1.off();
     logicValues[2] = 0;
-    if (debug){
-      log += "distrificator1_1 -> OFF (" + String(sensors1.airTemp) + " < " + String(borders[1].highAirTempNight) + ")\n";
-    }
-  } else {
+    // if (debug){
+      // log += "distrificator1_1 -> OFF (" + String(sensors1.airTemp) + " < " + String(borders[1].highAirTempNight) + ")\n";
+    // }
+  } 
+  // else {
     // logicValues[2] = 2;
-    log += "distrificator1_1 -> LOCK\n";
-  }
+    // log += "distrificator1_1 -> LOCK\n";
+  // }
   // Блок 2
   if (sensors2.airTemp > borders[2].highAirTempNight){
     distrif1_2.on();
     logicValues[3] = 1;
-    if (debug) {
-      log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempNight) + ")\n";
-    }
+    // if (debug) {
+      // log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempNight) + ")\n";
+    // }
   } else if (sensors2.airHum < borders[2].highAirHumNight){
     distrif1_2.off();
     logicValues[3] = 0;
-    if (debug) {
-      log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempNight) + ")\n";
-    }
-  } else {
-    log += "distrificator1_2 -> LOCK\n";
-  }
+    // if (debug) {
+      // log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempNight) + ")\n";
+    // }
+  } 
+  // else {
+    // log += "distrificator1_2 -> LOCK\n";
+  // }
 
   // ВЫВОД ЛОГОВ В КОНСОЛЬ
-  if (debug){
-    Serial.println(log);
-  }
+  // if (debug){
+    // Serial.println(log);
+  // }
   return String(String(logicValues[0]) +
                 String(logicValues[1]) +
                 String(logicValues[2]) +
@@ -1186,21 +1289,32 @@ void workObj::groundHumCheckDay(){
   
   if ((sensors1.groundHum < borders[1].groundHumDay) || (sensors2.groundHum < borders[2].groundHumDay)){
     pump04_1.on();
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Pump04_1 turned on");
   }
   if ((sensors1.groundHum >= borders[1].groundHumDay) && (sensors2.groundHum >= borders[2].groundHumDay)){
     pump04_1.off();
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Pump04_1 turned off");
   }
 
 }
-
 
 void workObj::groundHumCheckNight(){
 
   if ((sensors1.groundHum < borders[1].groundHumNight) || (sensors2.groundHum < borders[2].groundHumNight)){
     pump04_1.on();
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Pump04_1 turned on");
   }
   if ((sensors1.groundHum >= borders[1].groundHumNight) && (sensors2.groundHum >= borders[2].groundHumNight)){
     pump04_1.off();
+    logging.setMode(mode == 0 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Pump04_1 turned off");
   }
 
 }
@@ -1234,21 +1348,28 @@ BLYNK_WRITE(V1)
 {
   int a = param.asInt();
   // Если всё в штатном режиме, то меняем режим по указу Blynk
-  if (obj1.getMode() != alert)
+  if (obj1.getMode() != alert){
   // For using segmented switch instead of sider 
   // slider gives any walue when segmented switch gives value from 1 and futher
     obj1.changeModeTo(a-1);
-    Serial.println("Mode to: " + String(a-1) + ". Value from Blynk: " + String(a));
+    logging.setMode(obj1.getMode() == 1 ? 'A' : 'M');
+    logging.setType('L');
+    logging.println("Mode to:" + String(a-1) + ". Value from Blynk: " + String(a));
+  }
 };
 
 // Реле 1. Можно управлять с Blynk только в режиме manual
 // Pump04_1
+// pump04_1.
 BLYNK_WRITE(V10)
 {
   // Serial.println("switching r1");
   int a = param.asInt();
   if (obj1.getMode() == manual){
     pump04_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Pump04_1 turned " + String((a == 0) ? "on" : "off"));
   }
 
     //
@@ -1257,96 +1378,144 @@ BLYNK_WRITE(V10)
 // Вентиль верхней аэрации блока 1
 BLYNK_WRITE(V11){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     valve1_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Valve1_1 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 3
 // Вентиль верхней аэрации блока 2
 BLYNK_WRITE(V12){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     valve1_2.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Valve1_2 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 4
 // Вентиль нижней аэрации блока 1
 BLYNK_WRITE(V13){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     valve2_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Valve2_1 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 5
 // Вентиль нижней аэрации блока 2
 BLYNK_WRITE(V14){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     valve2_2.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Valve2_2 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 6
 // Основное освещение блока 1
 BLYNK_WRITE(V15){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     light1_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Light1_1 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 7
 // Основное освещение блока 2
 BLYNK_WRITE(V16){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     light1_2.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Light1_2 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 8
 // Длинный красный свет блока 1
 BLYNK_WRITE(V17){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     light01_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Light01_1 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 9
 // Длинный красный свет блока 2
 BLYNK_WRITE(V18){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     light01_2.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Light01_2 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 10
 // Вентилятор блока 1
 BLYNK_WRITE(V19){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     distrif1_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Distrif1_1 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 11
 // Вентилятор блока 2
 BLYNK_WRITE(V20){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     distrif1_2.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Distrif1_2 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 12
 // Парогенератор блока 1
 BLYNK_WRITE(V21){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     steamgen1_1.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Steamgen1_1 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 13
 // Парогенератор блока 2
 BLYNK_WRITE(V22){
   int a = param.asInt();
-  if (obj1.getMode() == manual)
+  if (obj1.getMode() == manual){
     steamgen1_2.setState( (a == 0)? true : false );
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Steamgen1_2 turned " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // Реле 14
@@ -1355,7 +1524,9 @@ BLYNK_WRITE(V23){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     heater1_1.setState( (a == 0)? true : false );
-    Serial.println("Heater 1 is now " + String(heater1_1.returnState()));
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Heater 1 turned " + String((a == 0) ? "on" : "off"));
   }
 }
 
@@ -1365,9 +1536,10 @@ BLYNK_WRITE(V24){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     heater1_2.setState( (a == 0)? true : false );
-    Serial.println("Heater 2 is now " + String(heater1_2.returnState()));
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Heater 2 turned " + String((a == 0) ? "on" : "off"));
   }
-  
 }
 
 // Реле 16
@@ -1582,19 +1754,31 @@ BLYNK_WRITE(V3){
 // Время включения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V4){
   obj1.setMainLightTime("start", 1, param[0].asLong()); 
+  logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
+  logging.setType('S');
+  logging.println("New time to turn on light1_1 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
 }
 // Время выключения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V5){
   obj1.setMainLightTime("end", 1, param[0].asLong());
+  logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
+  logging.setType('S');
+  logging.println("New time to turn off light1_1 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
 }
 
 // Время включения для режима 1 основного освещения блока 2
 BLYNK_WRITE(V6){
   obj1.setMainLightTime("start", 2, param[0].asLong()); 
+  logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
+  logging.setType('S');
+  logging.println("New time to turn on light1_2 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
 }
 // Время выключения для режима 1 основного освещения блока 2
 BLYNK_WRITE(V7){
   obj1.setMainLightTime("end", 2, param[0].asLong()); 
+  logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
+  logging.setType('S');
+  logging.println("New time to turn off light1_2 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
 }
 
 // Режим дальнего красного освещения блока 1
@@ -1689,8 +1873,9 @@ void setup() {
   requestSlave.setInterval(5000L, request);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
-  // Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
-  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
+  
+  Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
+  // Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
 
   // packetData data[slavesNumber]; 
   // Обновляем переменную времени

@@ -3,6 +3,16 @@
 
 #define BLYNK_PRINT Serial
 
+#define AIR_TEMP_1 1
+#define AIR_HUM_1 2
+#define GROUND_TEMP_1 3
+#define GROUND_HUM_1 4
+#define LIGHT_LEVEL_1 5
+#define AIR_TEMP_2 6
+#define AIR_HUM_2 7
+#define GROUND_TEMP_2 8
+#define GROUND_HUM_2 9
+#define LIGHT_LEVEL_2 10
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -36,9 +46,12 @@
 // 
 // Kee is the same as at home server (a bit obvious)
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
-char ssid[] = "3236"; // prod
+// char ssid[] = "3236"; // prod
+char ssid[] = "Farm_router"; // prod
+
 // char ssid[] = "Keenetic-4926"; // home
-char pass[] = "1593578426"; // prod
+// char pass[] = "1593578426"; // prod
+char pass[] = "zqecxwrv123"; // prod
 // char pass[] = "Q4WmFQTa"; // home
 
 
@@ -359,6 +372,42 @@ class workObj{
       }
       // sensors = d1;
       
+    }
+    
+    void setSensorValue(long value, int flag){
+      switch(flag){
+        case AIR_TEMP_1:
+          sensors1.airTemp = value;
+          break;
+        case AIR_HUM_1:
+          sensors1.airHum = value;
+          break;
+        case GROUND_TEMP_1:
+          sensors1.groundTemp = value;
+          break;
+        case GROUND_HUM_1:
+          sensors1.groundHum = value;
+          break;
+        case LIGHT_LEVEL_1:
+          sensors1.lightLevel = value;
+          break;
+
+        case AIR_TEMP_2:
+          sensors2.airTemp = value;
+          break;
+        case AIR_HUM_2:
+          sensors2.airHum = value;
+          break;
+        case GROUND_TEMP_2:
+          sensors2.groundTemp = value;
+          break;
+        case GROUND_HUM_2:
+          sensors2.groundHum = value;
+          break;
+        case LIGHT_LEVEL_2:
+          sensors2.lightLevel = value;
+          break;
+      }
     }
     // Функция для установки конкретной границы и её значения
     /* Ключи для значений
@@ -1849,6 +1898,61 @@ BLYNK_WRITE(V69){
   obj1.m2_2 = param.asInt();
 }
 
+// Block 1
+
+// v70 - air temp 1
+// v71 - air hum 1
+// v72 - ground temp 1
+// v73 - ground hum 1
+// v74 - light level
+
+// Block 2
+// v75 - v79
+
+// Sensor 1 values reading
+BLYNK_WRITE(V70){
+  int a = param.asInt();
+  obj1.setSensorValue(a, AIR_TEMP_1);
+}
+BLYNK_WRITE(V71){
+  int a = param.asInt();
+  obj1.setSensorValue(a, AIR_HUM_1);
+}
+BLYNK_WRITE(V72){
+  int a = param.asInt();
+  obj1.setSensorValue(a, GROUND_TEMP_1);
+}
+BLYNK_WRITE(V73){
+  int a = param.asInt();
+  obj1.setSensorValue(a, GROUND_HUM_1);
+}
+BLYNK_WRITE(V74){
+  int a = param.asInt();
+  obj1.setSensorValue(a, LIGHT_LEVEL_1);
+}
+// Sensor 2 values reading
+BLYNK_WRITE(V75){
+  int a = param.asInt();
+  obj1.setSensorValue(a, AIR_TEMP_2);
+}
+BLYNK_WRITE(V76){
+  int a = param.asInt();
+  obj1.setSensorValue(a, AIR_HUM_2);
+}
+BLYNK_WRITE(V77){
+  int a = param.asInt();
+  obj1.setSensorValue(a, GROUND_TEMP_2);
+}
+BLYNK_WRITE(V78){
+  int a = param.asInt();
+  obj1.setSensorValue(a, GROUND_HUM_2);
+}
+BLYNK_WRITE(V79){
+  int a = param.asInt();
+  obj1.setSensorValue(a, LIGHT_LEVEL_2);
+}
+
+
 // Костыль для функции obj1.saveModesAmdAerToEEPROM()
 void flagTrue();
 void request();
@@ -1931,6 +2035,8 @@ void loop() {
     obj1.showBorders(1);
     // obj1.showBorders(2);
   }
+  
+  // Автоматика
   if (onAuto == true){
     if (obj1.getMode() == automatic){
 
@@ -1982,23 +2088,26 @@ void request(){
   if (debug) Serial.println();
   parsePackage(obj1.sensors2, arrData);
   if (debug) showPackage(obj1.sensors2);
-
+  // Отправка данных с датчиков на Blynk
   sentToBlynk();
 }
 
 void sentToBlynk(){
   // Sensors block 1
-  Blynk.virtualWrite(V70, obj1.sensors1.airTemp);
-  Blynk.virtualWrite(V71, obj1.sensors1.airHum);
-  Blynk.virtualWrite(V72, obj1.sensors1.groundTemp);
-  Blynk.virtualWrite(V73, obj1.sensors1.groundHum);
-  Blynk.virtualWrite(V74, obj1.sensors1.lightLevel);
+
+  // Blynk.virtualWrite(V70, obj1.sensors1.airTemp);
+  // Blynk.virtualWrite(V71, obj1.sensors1.airHum);
+  // Blynk.virtualWrite(V72, obj1.sensors1.groundTemp);
+  // Blynk.virtualWrite(V73, obj1.sensors1.groundHum);
+  // Blynk.virtualWrite(V74, obj1.sensors1.lightLevel);
+  
   // Sensors block 2
-  Blynk.virtualWrite(V75, obj1.sensors2.airTemp);
-  Blynk.virtualWrite(V76, obj1.sensors2.airHum);
-  Blynk.virtualWrite(V77, obj1.sensors2.groundTemp);
-  Blynk.virtualWrite(V78, obj1.sensors2.groundHum);
-  Blynk.virtualWrite(V79, obj1.sensors2.lightLevel);
+  
+  // Blynk.virtualWrite(V75, obj1.sensors2.airTemp);
+  // Blynk.virtualWrite(V76, obj1.sensors2.airHum);
+  // Blynk.virtualWrite(V77, obj1.sensors2.groundTemp);
+  // Blynk.virtualWrite(V78, obj1.sensors2.groundHum);
+  // Blynk.virtualWrite(V79, obj1.sensors2.lightLevel);
 
 
 }

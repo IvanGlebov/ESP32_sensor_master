@@ -16,6 +16,8 @@
 
 #define SHOW_SENSORS true
 
+#define USE_LOCAL_SERVER true
+
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
@@ -49,12 +51,12 @@
 // Kee is the same as at home server (a bit obvious)
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
 // char ssid[] = "3236"; // prod
-// char ssid[] = "Farm_router"; // prod
-char ssid[] = "Keenetic-4926"; // home
+char ssid_prod[] = "Farm_router"; // prod
+char ssid_local[] = "Keenetic-4926"; // home
 
 // char pass[] = "1593578426"; // prod
-// char pass[] = "zqecxwrv123"; // prod
-char pass[] = "Q4WmFQTa"; // home
+char pass_prod[] = "zqecxwrv123"; // prod
+char pass_local[] = "Q4WmFQTa"; // home
 
 
 PCF8574 pcf_1(0x20);
@@ -172,6 +174,7 @@ void logger::setLogsState(bool state, int logType) {
       break;
   }
 }
+
 logger logging('M', 'S', true, true);
 
 // Structure for packet variables saving
@@ -1464,6 +1467,28 @@ BLYNK_CONNECTED() {
   rtcBlynk.begin();
 }
 
+// Light logs flag
+BLYNK_WRITE(V80) {
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Lamp);
+}
+// Valves logs flag
+BLYNK_WRITE(V81) {
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Valve);
+}
+// Pump logs files
+BLYNK_WRITE(V82) {  
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Pump);
+}
+// Relays logs flag
+BLYNK_WRITE(V83) {
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Relays);
+}
+
+
 //  000000  000000  00        00    00   00   00000
 //  00  00  00      00       0  0    00 00   00
 //  000000  000000  00      000000    000     0000
@@ -2076,8 +2101,12 @@ void setup() {
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
   
+  if (USE_LOCAL_SERVER){
+    Blynk.begin(auth, ssid_local, pass_local, IPAddress(10,1,92,35), 8080);
+  } else {
+    Blynk.begin(auth, ssid_prod, pass_prod, IPAddress(192,168,1,106), 8080);
+  }
   // Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
-  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
 
   // packetData data[slavesNumber]; 
   // Обновляем переменную времени

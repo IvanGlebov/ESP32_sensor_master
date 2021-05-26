@@ -130,13 +130,15 @@ class logger {
     void print(String text);
     void println(String text);
     void setTimestamp(long timestamp) { time = timestamp; }
-    void setTimeShowMode(int mode) { timeShowMode = mode; }
+    void setTimeShowMode(int mode) { timeShowMode = (mode == timestamp) ? 1 : 2;}
 };
 
 void logger::println(String text) {
   String output;
-  String timeStr = (timeShowMode == timestamp) ? String(time) : (String(time/3600) + ":" + String((time-(time/3600)*3600)/60) + ":" + String(time-(time-(time/3600)*3600)/60));
-  output += "<" + String(time) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
+  String timeStr = (timeShowMode != hms) ? String(time) : String(time/3600) + ":" + String(time%3600/60) + ":" + String(time%60);
+  // String timeStr = String(time/3600) + ":" + String(time%3600/60) + ":" + String(time%60);
+  
+  output += "<" + String(timeStr) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
   output += text;
   if (showLogs){
     if (sendToTerminal == true){
@@ -150,8 +152,9 @@ void logger::println(String text) {
 
 void logger::print(String text) {
   String output;
-  String timeStr = (timeShowMode == timestamp) ? String(time) : (String(time/3600) + ":" + String((time-(time/3600)*3600)/60) + ":" + String(time-(time-(time/3600)*3600)/60));
-  output += "<" + String(time) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
+  String timeStr = (timeShowMode != hms) ? String(time) : String(time/3600) + ":" + String(time%3600/60) + ":" + String(time%60);
+  // String timeStr = String(time/3600) + ":" + String(time%3600/60) + ":" + String(time%60);
+  output += "<" + String(timeStr) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
   output += text;
   if (showLogs){
     if (sendToTerminal == true){
@@ -1496,6 +1499,11 @@ BLYNK_WRITE(V82) {
 BLYNK_WRITE(V83) {
   int a = param.asInt();
   logging.setLogsState(bool(a), Relays);
+}
+// Time format in logs
+BLYNK_WRITE(V84){
+  int a = param.asInt();
+  logging.setTimeShowMode(a);
 }
 
 

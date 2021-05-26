@@ -14,7 +14,7 @@
 #define GROUND_HUM_2 9
 #define LIGHT_LEVEL_2 10
 
-#define SHOW_SENSORS true
+#define SHOW_SENSORS false
 
 #define USE_LOCAL_SERVER true
 
@@ -98,6 +98,7 @@ WidgetTerminal terminal(V0);
 
 // Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
 enum logTypes {Lamp=1, Valve, Pump, Relays};
+enum timeShowModes {timestamp=1, hms};
 class logger {
   private:
     char workMode = 'M';
@@ -106,7 +107,7 @@ class logger {
     bool sendToTerminal = true;
     bool showLogs = true;
     long time = 0;
-
+    int timeShowMode = timestamp;
 
     // virtual pins for bool values
 
@@ -128,6 +129,7 @@ class logger {
     void print(String text);
     void println(String text);
     void setTimestamp(long timestamp) { time = timestamp; }
+    void setTimeShowMode(int mode) { timeShowMode = mode; }
 };
 
 void logger::println(String text) {
@@ -2101,10 +2103,10 @@ void setup() {
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
   
-  if (USE_LOCAL_SERVER){
-    Blynk.begin(auth, ssid_local, pass_local, IPAddress(10,1,92,35), 8080);
+  if (!USE_LOCAL_SERVER){
+    Blynk.begin(auth, ssid_prod, pass_prod, IPAddress(10,1,92,35), 8080);
   } else {
-    Blynk.begin(auth, ssid_prod, pass_prod, IPAddress(192,168,1,106), 8080);
+    Blynk.begin(auth, ssid_local, pass_local, IPAddress(192,168,1,106), 8080);
   }
   // Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
 

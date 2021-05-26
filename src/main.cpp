@@ -1961,6 +1961,30 @@ BLYNK_WRITE(V84)
   // logging.println("TIME_MODE: " + String(a));
   logging.setTimeShowMode(a);
 }
+// Distrificators logs flag
+BLYNK_WRITE(V88)
+{
+  int a = param.asInt();
+  logging.setDistrifShow(a);
+}
+// Steam logs flag
+BLYNK_WRITE(V89)
+{
+  int a = param.asInt();
+  logging.setSteamShow(a);
+}
+// Heater logs flag
+BLYNK_WRITE(V90)
+{
+  int a = param.asInt();
+  logging.setHeaterShow(a);
+}
+// Sensors logs flag
+BLYNK_WRITE(V91)
+{
+  int a = param.asInt();
+  logging.setSensorsShow(a);
+}
 
 //  000000  000000  00        00    00   00   00000
 //  00  00  00      00       0  0    00 00   00
@@ -2455,7 +2479,7 @@ BLYNK_WRITE(V4)
   logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
-  logging.println("New time to turn on light1_1 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60));
+  logging.println("New time to turn on light1_1 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60) + "[" + String(param[0].asLong()) + "]");
 }
 // Время выключения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V5)
@@ -2464,7 +2488,7 @@ BLYNK_WRITE(V5)
   logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
-  logging.println("New time to turn off light1_1 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60));
+  logging.println("New time to turn off light1_1 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60) + "[" + String(param[0].asLong()) + "]");
 }
 
 // Время включения для режима 1 основного освещения блока 2
@@ -2474,7 +2498,7 @@ BLYNK_WRITE(V6)
   logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
-  logging.println("New time to turn on light1_2 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60));
+  logging.println("New time to turn on light1_2 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60) + "[" + String(param[0].asLong()) + "]");
 }
 // Время выключения для режима 1 основного освещения блока 2
 BLYNK_WRITE(V7)
@@ -2483,7 +2507,7 @@ BLYNK_WRITE(V7)
   logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
-  logging.println("New time to turn off light1_2 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60));
+  logging.println("New time to turn off light1_2 -> " + String(param[0].asLong() / 3600) + ":" + String((param[0].asLong() - (param[0].asLong() / 3600) * 3600) / 60) + "[" + String(param[0].asLong()) + "]");
 }
 
 // Режим дальнего красного освещения блока 1
@@ -2686,9 +2710,10 @@ void loop()
   bool onAuto = true;                 // Включение обработки автоматического режима
   bool requests = false;              // Получение данных от slave
   bool showRedLightDurations = false; // Вывод в консоль длительностей красной досветки
-  if (strtTime > 0){
+  if (strtTime > 0)
+  {
     lcd.clear();
-    lcd.print(0,0, "Strt: " + String(obj1.getTimeBlynk()/3600) + ":" + String(obj1.getTimeBlynk()%3600/60) + ":" + String(obj1.getTimeBlynk()%60));
+    lcd.print(0, 0, "Strt: " + String(obj1.getTimeBlynk() / 3600) + ":" + String(obj1.getTimeBlynk() % 3600 / 60) + ":" + String(obj1.getTimeBlynk() % 60));
     strtTime--;
   }
   eeprom.run();
@@ -2761,7 +2786,7 @@ void loop()
       obj1.aerationControl();
     }
   }
-  if (SHOW_SENSORS)
+  if (logging.getSensorsLogs() == true)
   {
     logging.setTimestamp(obj1.getTimeBlynk());
 

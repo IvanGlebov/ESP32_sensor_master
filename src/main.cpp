@@ -14,6 +14,8 @@
 #define GROUND_HUM_2 9
 #define LIGHT_LEVEL_2 10
 
+#define SHOW_SENSORS true
+
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
@@ -47,12 +49,12 @@
 // Kee is the same as at home server (a bit obvious)
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
 // char ssid[] = "3236"; // prod
-char ssid[] = "Farm_router"; // prod
+// char ssid[] = "Farm_router"; // prod
+char ssid[] = "Keenetic-4926"; // home
 
-// char ssid[] = "Keenetic-4926"; // home
 // char pass[] = "1593578426"; // prod
-char pass[] = "zqecxwrv123"; // prod
-// char pass[] = "Q4WmFQTa"; // home
+// char pass[] = "zqecxwrv123"; // prod
+char pass[] = "Q4WmFQTa"; // home
 
 
 PCF8574 pcf_1(0x20);
@@ -100,17 +102,19 @@ class logger {
     int messageNumber = 0;
     bool sendToTerminal = true;
     bool showLogs = true;
+    long time = 0;
   public:
     logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs): workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs) {};
     void setMode(char mode) { workMode = mode; }
     void setType(char type) { messageType = type; }
     void print(String text);
     void println(String text);
+    void setTimestamp(long timestamp) { time = timestamp; }
 };
 
 void logger::println(String text) {
   String output;
-  output += "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
+  output += "<" + String(time) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
   output += text;
   if (showLogs){
     if (sendToTerminal == true){
@@ -124,7 +128,7 @@ void logger::println(String text) {
 
 void logger::print(String text) {
   String output;
-  output += "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
+  output += "<" + String(time) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
   output += text;
   if (showLogs){
     if (sendToTerminal == true){
@@ -374,7 +378,7 @@ class workObj{
       
     }
     
-    void setSensorValue(long value, int flag){
+    void setSensorValue(float value, int flag){
       switch(flag){
         case AIR_TEMP_1:
           sensors1.airTemp = value;
@@ -743,15 +747,25 @@ void workObj::lightControl() {
     // t-1 < t < t+1
     if (getMainLightMode(1) == timed){
       // Включение освещения по времени
-      if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)) {
+      if ((getMainLightTime("start", 1)) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1))
+      {
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
-        logging.println("Light1_1 turned on");
+        logging.println("Main lamp 1 turned on");
         light1_1.on();
-
       }
+
+      // if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)) {
+      //   logging.setMode(mode == 0 ? 'A' : 'M');
+      //   logging.setType('L');
+      //   logging.println("Light1_1 turned on");
+      //   light1_1.on();
+      // }
+      
       // Выключение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light1_1 turned off");
@@ -762,6 +776,7 @@ void workObj::lightControl() {
     if (getMainLightMode(2) == timed){
       // Включение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1)){
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light1_2 turned on");
@@ -769,6 +784,7 @@ void workObj::lightControl() {
       }
       // Выключение освещения по времени
       if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1)){
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light1_2 turned off");
@@ -787,24 +803,28 @@ void workObj::redLightControl(){
       // Досветка за 'redLightDuration_1' секунд основного освещения
       if ((getTimeBlynk() + redLightDuration_1 * 60 > getMainLightTime("start", 1) - 1) && (getTimeBlynk() + redLightDuration_1 * 60 < getMainLightTime("start", 1) + 1)){
         light01_1.on();
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light01_1 turned on");
       } // Выключение вместе с включением основного
       else if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)){
         light01_1.off();
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light01_1 turned off");
       } // Включение после выключения освного освещения
       else if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
         light01_1.on();
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light01_1 turned on");
       } // Выключение через 'redLightDuration_1'
       else if ((getTimeBlynk() - redLightDuration_1 * 60 > getMainLightTime("end", 1) - 1) && (getTimeBlynk() - redLightDuration_1 * 60 < getMainLightTime("end", 1) + 1)){
         light01_1.off();
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Light01_1 turned off");
@@ -839,6 +859,7 @@ void workObj::aerationControl(){
         aerTempTimeTop_1 = timeNowBlynk + n1_1;
         valve1_1.on();
         aerTopFlag_1 = true;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve1_1 opened");
@@ -848,6 +869,7 @@ void workObj::aerationControl(){
         aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
         valve1_1.off();
         aerTopFlag_1 = false;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve1_1 closed");
@@ -859,6 +881,7 @@ void workObj::aerationControl(){
         aerTempTimeDown_1 = timeNowBlynk + n1_2;
         valve2_1.on();
         aerDownFlag_1 = true;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve2_1 opened");
@@ -868,6 +891,7 @@ void workObj::aerationControl(){
         aerTempTimeDown_1 = timeNowBlynk + m1_2 * 60;
         valve2_1.off();
         aerDownFlag_1 = false;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve2_1 closed");
@@ -880,6 +904,7 @@ void workObj::aerationControl(){
         aerTempTimeTop_2 = timeNowBlynk + n2_1;
         valve1_2.on();
         aerTopFlag_2 = true;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve1_2 opened");
@@ -889,6 +914,7 @@ void workObj::aerationControl(){
         aerTempTimeTop_2 = timeNowBlynk + m2_1 * 60;
         valve1_2.off();
         aerTopFlag_2 = false;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve1_2 closed");
@@ -900,6 +926,7 @@ void workObj::aerationControl(){
         aerTempTimeDown_2 = timeNowBlynk + n2_2;
         valve2_2.on();
         aerDownFlag_2 = true;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve2_2 opened");
@@ -909,6 +936,7 @@ void workObj::aerationControl(){
         aerTempTimeDown_2 = timeNowBlynk + m2_2 * 60;
         valve2_2.off();
         aerDownFlag_2 = false;
+        logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
         logging.println("Valve2_2 closed");
@@ -948,12 +976,14 @@ String workObj::airHumCheckDay(){
   if (sensors1.airHum < borders[1].lowAirHumDay){
     steamgen1_1.on();
     logicValues[0] = 1;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumDay) + ")");
   } else {
     steamgen1_1.off();
     logicValues[0] = 0;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumDay) + ")");
@@ -963,12 +993,14 @@ String workObj::airHumCheckDay(){
   if (sensors2.airHum < borders[2].lowAirHumDay){
     steamgen1_2.on();
     logicValues[1] = 1;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumDay) + ")");   
   } else {
     steamgen1_2.off();
     logicValues[1] = 0;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumDay) + ")");   
@@ -979,17 +1011,20 @@ String workObj::airHumCheckDay(){
   if (sensors1.airHum > borders[1].highAirHumDay){
     distrif1_1.on();
     logicValues[2] = 1;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Distrificator1_1 -> ON (" + String(sensors1.airHum)  + " > " + String(borders[1].highAirHumDay) + ")");   
   } else if (sensors1.airTemp < borders[1].highAirTempDay) {
     distrif1_1.off();
     logicValues[2] = 0;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Distrificator1_1 -> OFF (" + String(sensors1.airHum)  + " < " + String(borders[1].highAirHumDay) + ")");   
   } else {
     // logicValues[2] = 2;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Distrificator1_1 -> LOCK");   
@@ -998,17 +1033,20 @@ String workObj::airHumCheckDay(){
   if (sensors2.airHum > borders[2].highAirHumDay){
     distrif1_2.on();
     logicValues[3] = 1;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Distrificator1_2 -> ON (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")");
   } else if (sensors2.airTemp < borders[2].highAirTempDay){
     distrif1_2.off();
     logicValues[3] = 0;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Distrificator1_2 -> OFF (" + String(sensors2.airHum)  + " > " + String(borders[2].highAirHumDay) + ")");
   } else {
     // logicValues[3] = 2;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Distrificator1_2 -> LOCK");   
@@ -1154,12 +1192,14 @@ String workObj::airTempCheckDay(){
   if (sensors1.airTemp < borders[1].lowAirTempDay){
     heater1_1.on();
     logicValues[0] = 1;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempDay) + ")");
   } else {
     heater1_1.off();
     logicValues[0] = 0;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempDay) + ")");
@@ -1168,12 +1208,14 @@ String workObj::airTempCheckDay(){
   if (sensors2.airTemp < borders[2].lowAirTempDay){
     heater1_2.on();
     logicValues[1] = 1;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempDay) + ")");
   } else {
     heater1_2.off();
     logicValues[1] = 0;
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Heater1_2 -> OFF (" + String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempDay) + ")");
@@ -1338,12 +1380,14 @@ void workObj::groundHumCheckDay(){
   
   if ((sensors1.groundHum < borders[1].groundHumDay) || (sensors2.groundHum < borders[2].groundHumDay)){
     pump04_1.on();
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Pump04_1 turned on");
   }
   if ((sensors1.groundHum >= borders[1].groundHumDay) && (sensors2.groundHum >= borders[2].groundHumDay)){
     pump04_1.off();
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Pump04_1 turned off");
@@ -1355,12 +1399,14 @@ void workObj::groundHumCheckNight(){
 
   if ((sensors1.groundHum < borders[1].groundHumNight) || (sensors2.groundHum < borders[2].groundHumNight)){
     pump04_1.on();
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Pump04_1 turned on");
   }
   if ((sensors1.groundHum >= borders[1].groundHumNight) && (sensors2.groundHum >= borders[2].groundHumNight)){
     pump04_1.off();
+    logging.setTimestamp(getTimeBlynk());
     logging.setMode(mode == 0 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Pump04_1 turned off");
@@ -1401,6 +1447,7 @@ BLYNK_WRITE(V1)
   // For using segmented switch instead of sider 
   // slider gives any walue when segmented switch gives value from 1 and futher
     obj1.changeModeTo(a-1);
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode(obj1.getMode() == 1 ? 'A' : 'M');
     logging.setType('L');
     logging.println("Mode to:" + String(a-1) + ". Value from Blynk: " + String(a));
@@ -1416,6 +1463,7 @@ BLYNK_WRITE(V10)
   int a = param.asInt();
   if (obj1.getMode() == manual){
     pump04_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Pump04_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1429,6 +1477,7 @@ BLYNK_WRITE(V11){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     valve1_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Valve1_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1441,6 +1490,7 @@ BLYNK_WRITE(V12){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     valve1_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Valve1_2 turned " + String((a == 0) ? "on" : "off"));
@@ -1453,6 +1503,7 @@ BLYNK_WRITE(V13){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     valve2_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Valve2_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1465,6 +1516,7 @@ BLYNK_WRITE(V14){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     valve2_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Valve2_2 turned " + String((a == 0) ? "on" : "off"));
@@ -1477,6 +1529,7 @@ BLYNK_WRITE(V15){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     light1_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Light1_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1489,6 +1542,7 @@ BLYNK_WRITE(V16){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     light1_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Light1_2 turned " + String((a == 0) ? "on" : "off"));
@@ -1501,6 +1555,7 @@ BLYNK_WRITE(V17){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     light01_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Light01_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1513,6 +1568,7 @@ BLYNK_WRITE(V18){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     light01_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Light01_2 turned " + String((a == 0) ? "on" : "off"));
@@ -1525,6 +1581,7 @@ BLYNK_WRITE(V19){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     distrif1_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Distrif1_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1537,6 +1594,7 @@ BLYNK_WRITE(V20){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     distrif1_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Distrif1_2 turned " + String((a == 0) ? "on" : "off"));
@@ -1549,6 +1607,7 @@ BLYNK_WRITE(V21){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     steamgen1_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Steamgen1_1 turned " + String((a == 0) ? "on" : "off"));
@@ -1561,6 +1620,7 @@ BLYNK_WRITE(V22){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     steamgen1_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Steamgen1_2 turned " + String((a == 0) ? "on" : "off"));
@@ -1573,6 +1633,7 @@ BLYNK_WRITE(V23){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     heater1_1.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Heater 1 turned " + String((a == 0) ? "on" : "off"));
@@ -1585,6 +1646,7 @@ BLYNK_WRITE(V24){
   int a = param.asInt();
   if (obj1.getMode() == manual){
     heater1_2.setState( (a == 0)? true : false );
+    logging.setTimestamp(obj1.getTimeBlynk());
     logging.setMode('M');
     logging.setType('R');
     logging.println("Heater 2 turned " + String((a == 0) ? "on" : "off"));
@@ -1803,6 +1865,7 @@ BLYNK_WRITE(V3){
 // Время включения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V4){
   obj1.setMainLightTime("start", 1, param[0].asLong()); 
+  logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
   logging.println("New time to turn on light1_1 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
@@ -1810,6 +1873,7 @@ BLYNK_WRITE(V4){
 // Время выключения для режима 1 основного освещения блока 1
 BLYNK_WRITE(V5){
   obj1.setMainLightTime("end", 1, param[0].asLong());
+  logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
   logging.println("New time to turn off light1_1 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
@@ -1818,6 +1882,7 @@ BLYNK_WRITE(V5){
 // Время включения для режима 1 основного освещения блока 2
 BLYNK_WRITE(V6){
   obj1.setMainLightTime("start", 2, param[0].asLong()); 
+  logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
   logging.println("New time to turn on light1_2 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
@@ -1825,6 +1890,7 @@ BLYNK_WRITE(V6){
 // Время выключения для режима 1 основного освещения блока 2
 BLYNK_WRITE(V7){
   obj1.setMainLightTime("end", 2, param[0].asLong()); 
+  logging.setTimestamp(obj1.getTimeBlynk());
   logging.setMode(obj1.getMode() == 0 ? 'A' : 'M');
   logging.setType('S');
   logging.println("New time to turn off light1_2 -> " + String(param[0].asLong()/3600) + ":" + String((param[0].asLong() - (param[0].asLong()/3600)*3600)/60));
@@ -1911,44 +1977,44 @@ BLYNK_WRITE(V69){
 
 // Sensor 1 values reading
 BLYNK_WRITE(V70){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, AIR_TEMP_1);
 }
 BLYNK_WRITE(V71){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, AIR_HUM_1);
 }
 BLYNK_WRITE(V72){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, GROUND_TEMP_1);
 }
 BLYNK_WRITE(V73){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, GROUND_HUM_1);
 }
 BLYNK_WRITE(V74){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, LIGHT_LEVEL_1);
 }
 // Sensor 2 values reading
 BLYNK_WRITE(V75){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, AIR_TEMP_2);
 }
 BLYNK_WRITE(V76){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, AIR_HUM_2);
 }
 BLYNK_WRITE(V77){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, GROUND_TEMP_2);
 }
 BLYNK_WRITE(V78){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, GROUND_HUM_2);
 }
 BLYNK_WRITE(V79){
-  int a = param.asInt();
+  float a = param.asFloat();
   obj1.setSensorValue(a, LIGHT_LEVEL_2);
 }
 
@@ -1978,8 +2044,8 @@ void setup() {
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
   
-  Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
-  // Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
+  // Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
+  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
 
   // packetData data[slavesNumber]; 
   // Обновляем переменную времени
@@ -2057,7 +2123,24 @@ void loop() {
     obj1.aerationControl();
   }
   }
+  if (SHOW_SENSORS){
+    logging.setTimestamp(obj1.getTimeBlynk());
 
+    logging.println("/----------------------------/");
+    logging.println("Air Temp 1:" + String(obj1.sensors1.airTemp));
+    logging.println("Air Hum 1:" + String(obj1.sensors1.airHum));
+    logging.println("Ground Temp 1:" + String(obj1.sensors1.groundTemp));
+    logging.println("Ground Hum 1:" + String(obj1.sensors1.groundHum));
+    logging.println("Light level 1:" + String(obj1.sensors1.lightLevel));
+
+    logging.println("Air Temp 2:" + String(obj1.sensors2.airTemp));
+    logging.println("Air Hum 2:" + String(obj1.sensors2.airHum));
+    logging.println("Ground Temp 2:" + String(obj1.sensors2.groundTemp));
+    logging.println("Ground Hum 2:" + String(obj1.sensors2.groundHum));
+    logging.println("Light level 2:" + String(obj1.sensors2.lightLevel));
+    logging.println("/----------------------------/");
+
+  }
 }
 
 // Функция для опроса плат-slave

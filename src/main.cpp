@@ -1750,7 +1750,7 @@ String workObj::airTempCheckDay()
                 String(logicValues[3]));
 }
 
-// Not refactoref for now log system
+// Not refactoref for now log system/no second refactor for log system v2
 String workObj::airTempChechNight()
 {
   String log = "";
@@ -1872,18 +1872,24 @@ void workObj::groundHumCheckDay()
   if ((sensors1.groundHum < borders[1].groundHumDay) || (sensors2.groundHum < borders[2].groundHumDay))
   {
     pump04_1.on();
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Pump04_1 turned on");
+    if (logging.getPumpLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Pump 1 turned on");
+    }
   }
   if ((sensors1.groundHum >= borders[1].groundHumDay) && (sensors2.groundHum >= borders[2].groundHumDay))
   {
     pump04_1.off();
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Pump04_1 turned off");
+    if (logging.getPumpLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Pump 1 turned off");
+    }
   }
 }
 
@@ -1921,7 +1927,7 @@ WidgetRTC rtcBlynk;
 BLYNK_CONNECTED()
 {
   rtcBlynk.begin();
-  lcd.print(0,0, "Strt: " + String(obj1.getTimeBlynk()/3600) + ":" + String(obj1.getTimeBlynk()%3600) + ":" + String(obj1.getTimeBlynk()%60));
+  lcd.print(0, 0, "Strt: " + String(obj1.getTimeBlynk() / 3600) + ":" + String(obj1.getTimeBlynk() % 3600) + ":" + String(obj1.getTimeBlynk() % 60));
 }
 
 // Light logs flag
@@ -1936,7 +1942,7 @@ BLYNK_WRITE(V81)
   int a = param.asInt();
   logging.setLogsState(bool(a), Valve);
 }
-// Pump logs files
+// Pump logs flag
 BLYNK_WRITE(V82)
 {
   int a = param.asInt();

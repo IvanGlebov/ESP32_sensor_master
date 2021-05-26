@@ -1621,38 +1621,50 @@ String workObj::airTempCheckDay()
   {
     heater1_1.on();
     logicValues[0] = 1;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Heater1_1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempDay) + ")");
+    if (logging.getHeaterLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Heater 1 -> ON (" + String(sensors1.airTemp) + " < " + String(borders[1].lowAirTempDay) + ")");
+    }
   }
   else
   {
     heater1_1.off();
     logicValues[0] = 0;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Heater1_1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempDay) + ")");
+    if (logging.getHeaterLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Heater 1 -> OFF (" + String(sensors1.airTemp) + " > " + String(borders[1].lowAirTempDay) + ")");
+    }
   }
   // Блок 2
   if (sensors2.airTemp < borders[2].lowAirTempDay)
   {
     heater1_2.on();
     logicValues[1] = 1;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Heater1_2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempDay) + ")");
+    if (logging.getHeaterLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Heater 2 -> ON (" + String(sensors2.airTemp) + " < " + String(borders[2].lowAirTempDay) + ")");
+    }
   }
   else
   {
     heater1_2.off();
     logicValues[1] = 0;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Heater1_2 -> OFF (" + String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempDay) + ")");
+    if (logging.getHeaterLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Heater 2 -> OFF (" + String(sensors2.airTemp) + " > " + String(borders[2].lowAirTempDay) + ")");
+    }
   }
 
   // ВЕНТИЛЯЦИЯ
@@ -1661,6 +1673,13 @@ String workObj::airTempCheckDay()
   {
     distrif1_1.on();
     logicValues[2] = 1;
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 1 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumDay) + ")");
+    }
     // if (debug){
     // log += "distrificator1_1 -> ON (" + String(sensors1.airTemp) + " > " + String(borders[1].highAirTempDay) + ")\n";
     // }
@@ -1669,6 +1688,13 @@ String workObj::airTempCheckDay()
   {
     distrif1_1.off();
     logicValues[2] = 0;
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumDay) + ")");
+    }
     // if (debug){
     // log += "distrificator1_1 -> OFF (" +String(sensors1.airTemp) + " < " + String(borders[1].highAirTempDay) + ")\n";
     // }
@@ -1683,6 +1709,13 @@ String workObj::airTempCheckDay()
   {
     distrif1_2.on();
     logicValues[3] = 1;
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 2 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumDay) + ")");
+    }
     // if (debug) {
     // log += "distrificator1_2 -> ON (" + String(sensors2.airTemp) + " > " + String(borders[2].highAirTempDay) + ")\n";
     // }
@@ -1691,6 +1724,13 @@ String workObj::airTempCheckDay()
   {
     distrif1_2.off();
     logicValues[3] = 0;
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 2 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumDay) + ")");
+    }
     // if (debug) {
     // log += "distrificator1_2 -> OFF (" + String(sensors2.airTemp) + " < " + String(borders[2].highAirTempDay) + ")\n";
     // }

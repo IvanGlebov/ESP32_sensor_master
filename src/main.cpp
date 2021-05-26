@@ -1186,7 +1186,7 @@ void workObj::redLightControl()
     }
   }
 }
-
+// valves
 void workObj::aerationControl()
 {
   if (getMode() == automatic)
@@ -1347,19 +1347,25 @@ String workObj::airHumCheckDay()
   {
     steamgen1_1.on();
     logicValues[0] = 1;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Steam1_1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumDay) + ")");
+    if (logging.getSteamLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Steam 1 -> ON (" + String(sensors1.airHum) + " < " + String(borders[1].lowAirHumDay) + ")");
+    }
   }
   else
   {
     steamgen1_1.off();
     logicValues[0] = 0;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Steam1_1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumDay) + ")");
+    if (logging.getSteamLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Steam 1 -> OFF (" + String(sensors1.airHum) + " > " + String(borders[1].lowAirHumDay) + ")");
+    }
   }
 
   // Блок 2
@@ -1367,19 +1373,25 @@ String workObj::airHumCheckDay()
   {
     steamgen1_2.on();
     logicValues[1] = 1;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Steam1_2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumDay) + ")");
+    if (logging.getSteamLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Steam 2 -> ON (" + String(sensors2.airHum) + " < " + String(borders[2].lowAirHumDay) + ")");
+    }
   }
   else
   {
     steamgen1_2.off();
     logicValues[1] = 0;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Steam1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumDay) + ")");
+    if (logging.getSteamLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Steam 2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].lowAirHumDay) + ")");
+    }
   }
 
   // ВЕНТИЛЯЦИЯ
@@ -1388,54 +1400,72 @@ String workObj::airHumCheckDay()
   {
     distrif1_1.on();
     logicValues[2] = 1;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Distrificator1_1 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumDay) + ")");
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 1 -> ON (" + String(sensors1.airHum) + " > " + String(borders[1].highAirHumDay) + ")");
+    }
   }
   else if (sensors1.airTemp < borders[1].highAirTempDay)
   {
     distrif1_1.off();
     logicValues[2] = 0;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Distrificator1_1 -> OFF (" + String(sensors1.airHum) + " < " + String(borders[1].highAirHumDay) + ")");
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 1 -> OFF (" + String(sensors1.airHum) + " < " + String(borders[1].highAirHumDay) + ")");
+    }
   }
   else
   {
     // logicValues[2] = 2;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Distrificator1_1 -> LOCK");
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 1 -> LOCK");
+    }
   }
   // Блок 2
   if (sensors2.airHum > borders[2].highAirHumDay)
   {
     distrif1_2.on();
     logicValues[3] = 1;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Distrificator1_2 -> ON (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumDay) + ")");
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 2 -> ON (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumDay) + ")");
+    }
   }
   else if (sensors2.airTemp < borders[2].highAirTempDay)
   {
     distrif1_2.off();
     logicValues[3] = 0;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Distrificator1_2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumDay) + ")");
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator 2 -> OFF (" + String(sensors2.airHum) + " > " + String(borders[2].highAirHumDay) + ")");
+    }
   }
   else
   {
     // logicValues[3] = 2;
-    logging.setTimestamp(getTimeBlynk());
-    logging.setMode(mode == 0 ? 'A' : 'M');
-    logging.setType('L');
-    logging.println("Distrificator1_2 -> LOCK");
+    if (logging.getDistrifLogs() == true)
+    {
+      logging.setTimestamp(getTimeBlynk());
+      logging.setMode(mode == 0 ? 'A' : 'M');
+      logging.setType('L');
+      logging.println("Distrificator1_2 -> LOCK");
+    }
   }
 
   return String(String(logicValues[0]) +
@@ -1444,7 +1474,7 @@ String workObj::airHumCheckDay()
                 String(logicValues[3]));
 }
 
-// Not refactoref for now log system
+// Not refactoref for now log system/no second refactor for log system v2
 String workObj::airHumCheckNight()
 {
   // String log = "";

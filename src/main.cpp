@@ -575,6 +575,12 @@ class workObj{
 
       EEPROM.write(43, redLightDuration_1);
       EEPROM.write(44, redLightDuration_2);
+
+      EEPROM.writeLong(45, getMainLightTime("start", 1));
+      EEPROM.writeLong(49, getMainLightTime("end", 1));
+      EEPROM.writeLong(53, getMainLightTime("start", 2));
+      EEPROM.writeLong(57, getMainLightTime("end", 2));
+
       EEPROM.commit();
       // Serial.println("Saving modes ...");
     }
@@ -599,6 +605,11 @@ class workObj{
 
       redLightDuration_1 = EEPROM.read(43);
       redLightDuration_2 = EEPROM.read(44);
+
+      setMainLightTime("start", 1, EEPROM.readLong(45));
+      setMainLightTime("end", 1, EEPROM.readLong(49));
+      setMainLightTime("start", 2, EEPROM.readLong(53));
+      setMainLightTime("end", 2, EEPROM.readLong(57));
 
     }
     // Функция для сохранения всех значений границ в энергонезависимую память
@@ -2107,7 +2118,7 @@ void setup() {
   // Хорошо бы сделать отдельное питание на 3.3 линию в 3.4В
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
-  EEPROM.begin(50); // Init 30 bytes of EEPROM
+  EEPROM.begin(70); // Init 70 bytes of EEPROM
   Wire.begin(21, 22);        // Join I2C bus
   pcf_1.begin();       // Connect PCF8574_1 pin extension
   pcf_2.begin();       // Connect PCF8574_2 pin extension

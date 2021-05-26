@@ -141,6 +141,14 @@ private:
   bool show_relays_logs = true;
   // V84
   int timeShowMode = hms;
+  // V88
+  bool show_distrific_logs = true;
+  // V89
+  bool show_steam_logs = true;
+  // V90
+  bool show_heater_logs = true;
+  // V91
+  bool show_sensors_logs = false;
 
 public:
   logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs) : workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs){};
@@ -151,10 +159,19 @@ public:
   void println(String text);
   void setTimestamp(long timestamp) { time = timestamp; }
   void setTimeShowMode(int mode) { timeShowMode = (mode == timestamp) ? 1 : 2; }
+  void setDistrifShow(int state) { show_distrific_logs = (state == 1) ? false : true; }
+  void setSteamShow(int state) { show_steam_logs = (state == 1) ? false : true; }
+  void setHeaterShow(int state) { show_heater_logs = (state == 1) ? false : true; }
+  void setSensorsShow(int state) { show_sensors_logs = (state == 1) ? false : true; }
+
   bool getLightLogs() { return show_light_logs; }
   bool getValvesLogs() { return show_valves_logs; }
   bool getPumpLogs() { return show_relays_logs; }
   bool getRelaysLogs() { return show_relays_logs; }
+  bool getDistrifLogs() { return show_distrific_logs; }
+  bool getSteamLogs() { return show_steam_logs; }
+  bool getHeaterLogs() { return show_heater_logs; }
+  bool getSensorsLogs() { return show_sensors_logs; }
 };
 
 void logger::println(String text)

@@ -14,7 +14,9 @@
 #define GROUND_HUM_2 9
 #define LIGHT_LEVEL_2 10
 
-#define SHOW_SENSORS true
+#define SHOW_SENSORS false
+
+#define USE_LOCAL_SERVER true
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -49,12 +51,12 @@
 // Kee is the same as at home server (a bit obvious)
 char auth[] = "Rz8hI-YjZVfUY7qQb8hJGBFh48SuUn84";
 // char ssid[] = "3236"; // prod
-// char ssid[] = "Farm_router"; // prod
-char ssid[] = "Keenetic-4926"; // home
+char ssid_prod[] = "Farm_router"; // prod
+char ssid_local[] = "Keenetic-4926"; // home
 
 // char pass[] = "1593578426"; // prod
-// char pass[] = "zqecxwrv123"; // prod
-char pass[] = "Q4WmFQTa"; // home
+char pass_prod[] = "zqecxwrv123"; // prod
+char pass_local[] = "Q4WmFQTa"; // home
 
 
 PCF8574 pcf_1(0x20);
@@ -95,6 +97,8 @@ BlynkTimer requestSlave;
 WidgetTerminal terminal(V0);
 
 // Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
+enum logTypes {Lamp=1, Valve, Pump, Relays};
+enum timeShowModes {timestamp=1, hms};
 class logger {
   private:
     char workMode = 'M';
@@ -103,13 +107,29 @@ class logger {
     bool sendToTerminal = true;
     bool showLogs = true;
     long time = 0;
+    int timeShowMode = timestamp;
+
+    // virtual pins for bool values
+
+    // V80
+    bool show_light_logs = true;
+    // V81
+    bool show_valves_logs = true;
+    // V82
+    bool show_pump_logs = true;
+    // V83
+    bool show_relays_logs = true;
+
+
   public:
     logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs): workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs) {};
+    void setLogsState(bool state, int logType);
     void setMode(char mode) { workMode = mode; }
     void setType(char type) { messageType = type; }
     void print(String text);
     void println(String text);
     void setTimestamp(long timestamp) { time = timestamp; }
+    void setTimeShowMode(int mode) { timeShowMode = mode; }
 };
 
 void logger::println(String text) {
@@ -138,6 +158,23 @@ void logger::print(String text) {
     Serial.print(output);
   }
   messageNumber++;
+}
+
+void logger::setLogsState(bool state, int logType) {
+  switch(logType){
+    case Lamp:
+      show_light_logs = state;
+      break;
+    case Valve:
+      show_valves_logs = state;
+      break;
+    case Pump:
+      show_pump_logs = state;
+      break;
+    case Relays:
+      show_relays_logs = state;
+      break;
+  }
 }
 
 logger logging('M', 'S', true, true);
@@ -1432,6 +1469,28 @@ BLYNK_CONNECTED() {
   rtcBlynk.begin();
 }
 
+// Light logs flag
+BLYNK_WRITE(V80) {
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Lamp);
+}
+// Valves logs flag
+BLYNK_WRITE(V81) {
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Valve);
+}
+// Pump logs files
+BLYNK_WRITE(V82) {  
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Pump);
+}
+// Relays logs flag
+BLYNK_WRITE(V83) {
+  int a = param.asInt();
+  logging.setLogsState(bool(a), Relays);
+}
+
+
 //  000000  000000  00        00    00   00   00000
 //  00  00  00      00       0  0    00 00   00
 //  000000  000000  00      000000    000     0000
@@ -2044,8 +2103,12 @@ void setup() {
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
   
+  if (!USE_LOCAL_SERVER){
+    Blynk.begin(auth, ssid_prod, pass_prod, IPAddress(10,1,92,35), 8080);
+  } else {
+    Blynk.begin(auth, ssid_local, pass_local, IPAddress(192,168,1,106), 8080);
+  }
   // Blynk.begin(auth, ssid, pass, IPAddress(10,1,92,35), 8080);
-  Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,106), 8080);
 
   // packetData data[slavesNumber]; 
   // Обновляем переменную времени

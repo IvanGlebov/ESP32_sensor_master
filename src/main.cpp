@@ -104,7 +104,7 @@ BlynkTimer eeprom;
 BlynkTimer requestSlave;
 
 WidgetTerminal terminal(V0);
-
+WidgetLCD lcd(V85);
 // Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
 enum logTypes
 {
@@ -125,6 +125,7 @@ private:
   char messageType = 'S';
   int messageNumber = 0;
   bool sendToTerminal = true;
+  bool sendToTable = true;
   bool showLogs = true;
   long time = 0;
 
@@ -171,9 +172,20 @@ void logger::println(String text)
       terminal.println(output);
       terminal.flush();
     }
+    if (sendToTable == true)
+    {
+      Blynk.virtualWrite(V86, "add", messageNumber, text, timeStr);
+    }
     Serial.println(output);
   }
   messageNumber++;
+}
+
+BLYNK_WRITE(V87){
+  int a = param.asInt();
+  if (a == 1){
+    Blynk.virtualWrite(V86, "clr");
+  }
 }
 
 void logger::print(String text)
@@ -1762,6 +1774,7 @@ WidgetRTC rtcBlynk;
 BLYNK_CONNECTED()
 {
   rtcBlynk.begin();
+  lcd.print(0,0, "Strt: " + String(obj1.getTimeBlynk()/3600) + ":" + String(obj1.getTimeBlynk()%3600) + ":" + String(obj1.getTimeBlynk()%60));
 }
 
 // Light logs flag
@@ -2511,6 +2524,8 @@ void setup()
   timerEEPROM = obj1.getTimeBlynk();
 }
 
+int strtTime = 2;
+
 void loop()
 {
   bool showBorders = false;           // Отображение в консоли граничных значений
@@ -2518,7 +2533,11 @@ void loop()
   bool onAuto = true;                 // Включение обработки автоматического режима
   bool requests = false;              // Получение данных от slave
   bool showRedLightDurations = false; // Вывод в консоль длительностей красной досветки
-
+  if (strtTime > 0){
+    lcd.clear();
+    lcd.print(0,0, "Strt: " + String(obj1.getTimeBlynk()/3600) + ":" + String(obj1.getTimeBlynk()%3600/60) + ":" + String(obj1.getTimeBlynk()%60));
+    strtTime--;
+  }
   eeprom.run();
   if (requests == true)
   {

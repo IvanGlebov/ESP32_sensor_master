@@ -95,6 +95,7 @@ BlynkTimer requestSlave;
 WidgetTerminal terminal(V0);
 
 // Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
+enum logTypes {Lamp=1, Valve, Pump, Relays};
 class logger {
   private:
     char workMode = 'M';
@@ -103,8 +104,23 @@ class logger {
     bool sendToTerminal = true;
     bool showLogs = true;
     long time = 0;
+
+
+    // virtual pins for bool values
+
+    // V80
+    bool show_light_logs = true;
+    // V81
+    bool show_valves_logs = true;
+    // V82
+    bool show_pump_logs = true;
+    // V83
+    bool show_relays_logs = true;
+
+
   public:
     logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs): workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs) {};
+    void setLogsState(bool state, int logType);
     void setMode(char mode) { workMode = mode; }
     void setType(char type) { messageType = type; }
     void print(String text);
@@ -140,6 +156,22 @@ void logger::print(String text) {
   messageNumber++;
 }
 
+void logger::setLogsState(bool state, int logType) {
+  switch(logType){
+    case Lamp:
+      show_light_logs = state;
+      break;
+    case Valve:
+      show_valves_logs = state;
+      break;
+    case Pump:
+      show_pump_logs = state;
+      break;
+    case Relays:
+      show_relays_logs = state;
+      break;
+  }
+}
 logger logging('M', 'S', true, true);
 
 // Structure for packet variables saving

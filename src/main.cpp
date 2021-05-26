@@ -107,7 +107,6 @@ class logger {
     bool sendToTerminal = true;
     bool showLogs = true;
     long time = 0;
-    int timeShowMode = timestamp;
 
     // virtual pins for bool values
 
@@ -119,7 +118,9 @@ class logger {
     bool show_pump_logs = true;
     // V83
     bool show_relays_logs = true;
-
+    // V84
+    int timeShowMode = timestamp;
+    
 
   public:
     logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs): workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs) {};
@@ -134,6 +135,7 @@ class logger {
 
 void logger::println(String text) {
   String output;
+  String timeStr = (timeShowMode == timestamp) ? String(time) : (String(time/3600) + ":" + String((time-(time/3600)*3600)/60) + ":" + String(time-(time-(time/3600)*3600)/60));
   output += "<" + String(time) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
   output += text;
   if (showLogs){
@@ -148,6 +150,7 @@ void logger::println(String text) {
 
 void logger::print(String text) {
   String output;
+  String timeStr = (timeShowMode == timestamp) ? String(time) : (String(time/3600) + ":" + String((time-(time/3600)*3600)/60) + ":" + String(time-(time-(time/3600)*3600)/60));
   output += "<" + String(time) + "> " + "[" + String(workMode) + String(messageType) + "_" + String(messageNumber) + "] ";
   output += text;
   if (showLogs){

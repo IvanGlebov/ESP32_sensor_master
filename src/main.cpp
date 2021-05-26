@@ -797,11 +797,12 @@ void workObj::lightControl() {
         logging.setType('L');
         logging.println("Main lamp 1 turned on");
         light1_1.on();
+       // Выключение освещения по времени
       } else {
         logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
-        logging.println("Light1_1 turned off");
+        logging.println("Main lamp 1 turned off");
         light1_1. off();
       }
 
@@ -824,24 +825,23 @@ void workObj::lightControl() {
     // Режим 1 блока 2
     if (getMainLightMode(2) == timed){
       // Включение освещения по времени
-      if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1)){
+      if ((getMainLightTime("start", 2)) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2))
+      {
         logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
-        logging.println("Light1_2 turned on");
+        logging.println("Main lamp 2 turned on");
         light1_2.on();
-      }
-      // Выключение освещения по времени
-      if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1)){
+       // Выключение освещения по времени
+      } else {
         logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
-        logging.println("Light1_2 turned off");
-        light1_2.off();
+        logging.println("Main lamp 2 turned off");
+        light1_2. off();
       }
     }
   }
-
 }
 
 void workObj::redLightControl(){
@@ -1503,7 +1503,9 @@ BLYNK_WRITE(V83) {
 // Time format in logs
 BLYNK_WRITE(V84){
   int a = param.asInt();
+  // logging.println("TIME_MODE: " + String(a));
   logging.setTimeShowMode(a);
+  
 }
 
 

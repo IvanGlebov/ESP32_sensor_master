@@ -134,19 +134,19 @@ private:
   // V80
   bool show_light_logs = true;
   // V81
-  bool show_valves_logs = true;
+  bool show_valves_logs = false;
   // V82
-  bool show_pump_logs = true;
+  bool show_pump_logs = false;
   // V83
-  bool show_relays_logs = true;
+  bool show_relays_logs = false;
   // V84
   int timeShowMode = hms;
   // V88
-  bool show_distrific_logs = true;
+  bool show_distrific_logs = false;
   // V89
-  bool show_steam_logs = true;
+  bool show_steam_logs = false;
   // V90
-  bool show_heater_logs = true;
+  bool show_heater_logs = false;
   // V91
   bool show_sensors_logs = false;
 
@@ -956,6 +956,15 @@ void workObj::lightControl()
       // Включение освещения по времени
       if (getMainLightTime("start", 1) < getMainLightTime("end", 1))
       {
+        // z1, z5 - all off
+        // z2, z4 - red light on
+        // z3 - only main light on
+        bool z1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1*60) ? true : false;
+        bool z2 = (getMainLightTime("start", 1) - redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
+        bool z3 = (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
+        bool z4 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1*60) ? true : false;
+        bool z5 = (getMainLightTime("end", 1) + redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
+
         if ((getMainLightTime("start", 1)) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1))
         {
           if (logging.getLightLogs() == true)
@@ -982,7 +991,11 @@ void workObj::lightControl()
       }
       if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
       {
-        if ((getMainLightTime("start", 1)) > getTimeBlynk() || getTimeBlynk() > getMainLightTime("end", 1))
+        
+        // if (getTimeBlynk() < getMainLightTime("start", 1) && getTimeBlynk() > getMainLightTime("end", 1))
+        // logging.println("Exception");
+
+        if ((getTimeBlynk() < getMainLightTime("start", 1) && getTimeBlynk() > getMainLightTime("end", 1)))
         {
           if (logging.getLightLogs() == true)
           {
@@ -1006,12 +1019,6 @@ void workObj::lightControl()
           light1_1.off();
         }
       }
-      // if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1)) {
-      //   logging.setMode(mode == 0 ? 'A' : 'M');
-      //   logging.setType('L');
-      //   logging.println("Light1_1 turned on");
-      //   light1_1.on();
-      // }
 
       // Выключение освещения по времени
       // if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
@@ -1054,7 +1061,7 @@ void workObj::lightControl()
       }
       if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
       {
-        if ((getMainLightTime("start", 2)) > getTimeBlynk() || getTimeBlynk() > getMainLightTime("end", 2))
+        if ((getTimeBlynk() < (getMainLightTime("start", 2)) && getTimeBlynk() > getMainLightTime("end", 2)))
         {
           if (logging.getLightLogs() == true)
           {
@@ -1089,101 +1096,186 @@ void workObj::redLightControl()
     // Режим 1 блока 1
     if (redLightMode_1 == timed)
     {
-      // Досветка за 'redLightDuration_1' секунд основного освещения
-      if ((getTimeBlynk() + redLightDuration_1 * 60 > getMainLightTime("start", 1) - 1) && (getTimeBlynk() + redLightDuration_1 * 60 < getMainLightTime("start", 1) + 1))
+      // Нормальный режим работы освещения
+      if (getMainLightTime("start", 1) < getMainLightTime("end", 1))
       {
-        light01_1.on();
-        if (logging.getLightLogs() == true)
+        // Правая часть интервала при обычной работе, в которой свет включен
+        if (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1 * 60)
         {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 1 turned on");
+          light01_1.on();
+          if (logging.getLightLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Red light 1 turned on");
+          }
         }
-      } // Выключение вместе с включением основного
-      else if ((getTimeBlynk() > getMainLightTime("start", 1) - 1) && (getTimeBlynk() < getMainLightTime("start", 1) + 1))
+        // Левая часть интервала при обычной работе, в которой свет включён
+        if (getMainLightTime("start", 1) - redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1))
+        {
+          light01_1.on();
+          if (logging.getLightLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Red light 1 turned on");
+          }
+        }
+        // Центральный интервал, в котором свет выключен
+        if (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1))
+        {
+          light01_1.off();
+          if (logging.getLightLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Red light 1 turned off");
+          }
+        }
+      }
+      // Ночной режим работы
+      if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
       {
-        light01_1.off();
-        if (logging.getLightLogs() == true)
+        // Интервал после отключения основного освещения
+        if (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) + redLightDuration_1 * 60)
         {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 1 turned off");
+          light01_1.on();
+          if (logging.getLightLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Red light 1 turned on");
+          }
         }
-      } // Включение после выключения освного освещения
-      else if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1))
-      {
-        light01_1.on();
-        if (logging.getLightLogs() == true)
+        // Интервал перед включением основного освещения
+        else if (getMainLightTime("end", 1) - redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1))
         {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 1 turned on");
+          light01_1.on();
+          if (logging.getLightLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Red light 1 turned on");
+          }
         }
-      } // Выключение через 'redLightDuration_1'
-      else if ((getTimeBlynk() - redLightDuration_1 * 60 > getMainLightTime("end", 1) - 1) && (getTimeBlynk() - redLightDuration_1 * 60 < getMainLightTime("end", 1) + 1))
-      {
-        light01_1.off();
-        if (logging.getLightLogs() == true)
+        else
         {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 1 turned off");
+          light01_1.off();
+          if (logging.getLightLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Red light 1 turned off");
+          }
         }
+        // Интервалы между всеми остальными
+        // if ((0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ||
+        //     (getMainLightTime("start", 1) + redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) - redLightDuration_1 * 60) ||
+        //     (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < 86400))
+        // {
+        //   light01_1.off();
+        //   if (logging.getLightLogs() == true)
+        //   {
+        //     logging.setTimestamp(getTimeBlynk());
+        //     logging.setMode(mode == 0 ? 'A' : 'M');
+        //     logging.setType('L');
+        //     logging.println("Red light 1 turned off");
+        //   }
+        // }
       }
     }
     // Режим 1 блока 2
-    if (redLightMode_2 == timed)
-    {
-      // Досветка за 'redLightDuration_1' секунд основного освещения
-      if ((getTimeBlynk() + redLightDuration_2 * 60 > getMainLightTime("start", 2) - 1) && (getTimeBlynk() + redLightDuration_2 * 60 < getMainLightTime("start", 2) + 1))
-      {
-        light01_2.on();
-        if (logging.getLightLogs() == true)
-        {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 2 turned on");
-        }
-      } // Выключение вместе с включением основного
-      else if ((getTimeBlynk() > getMainLightTime("start", 2) - 1) && (getTimeBlynk() < getMainLightTime("start", 2) + 1))
-      {
-        light01_2.off();
-        if (logging.getLightLogs() == true)
-        {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 2 turned off");
-        }
-      } // Включение после выключения освного освещения
-      else if ((getTimeBlynk() > getMainLightTime("end", 2) - 1) && (getTimeBlynk() < getMainLightTime("end", 2) + 1))
-      {
-        light01_2.on();
-        if (logging.getLightLogs() == true)
-        {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 2 turned on");
-        }
-      } // Выключение через 'redLightDuration_1'
-      else if ((getTimeBlynk() - redLightDuration_2 * 60 > getMainLightTime("end", 2) - 1) && (getTimeBlynk() - redLightDuration_2 * 60 < getMainLightTime("end", 2) + 1))
-      {
-        light01_2.off();
-        if (logging.getLightLogs() == true)
-        {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Red light 2 turned off");
-        }
-      }
-    }
+    // if (redLightMode_2 == timed)
+    // {
+    //   // Нормальный режим
+    //   if (getMainLightTime("start", 2) < getMainLightTime("end", 2))
+    //   {
+    //     // Правая часть интервала при обычной работе, в которой свет включен
+    //     if (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) + redLightDuration_2 * 60)
+    //     {
+    //       light01_2.on();
+    //       if (logging.getLightLogs() == true)
+    //       {
+    //         logging.setTimestamp(getTimeBlynk());
+    //         logging.setMode(mode == 0 ? 'A' : 'M');
+    //         logging.setType('L');
+    //         logging.println("Red light 2 turned on");
+    //       }
+    //     }
+    //     // Левая часть интервала при обычной работе, в которой свет включён
+    //     if (getMainLightTime("start", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2))
+    //     {
+    //       light01_2.on();
+    //       if (logging.getLightLogs() == true)
+    //       {
+    //         logging.setTimestamp(getTimeBlynk());
+    //         logging.setMode(mode == 0 ? 'A' : 'M');
+    //         logging.setType('L');
+    //         logging.println("Red light 2 turned on");
+    //       }
+    //     }
+    //     // Центральный интервал, в котором свет выключен
+    //     if (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2))
+    //     {
+    //       light01_2.off();
+    //       if (logging.getLightLogs() == true)
+    //       {
+    //         logging.setTimestamp(getTimeBlynk());
+    //         logging.setMode(mode == 0 ? 'A' : 'M');
+    //         logging.setType('L');
+    //         logging.println("Red light 2 turned off");
+    //       }
+    //     }
+    //   }
+    //   // Ночной режим
+    //   if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
+    //   {
+    //     // Интервал после отключения основного освещения
+    //     if (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) + redLightDuration_2 * 60)
+    //     {
+    //       light01_2.on();
+    //       if (logging.getLightLogs() == true)
+    //       {
+    //         logging.setTimestamp(getTimeBlynk());
+    //         logging.setMode(mode == 0 ? 'A' : 'M');
+    //         logging.setType('L');
+    //         logging.println("Red light 2 turned on");
+    //       }
+    //     }
+    //     // Интервал перед включением основного освещения
+    //     if (getMainLightTime("end", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2))
+    //     {
+    //       light01_2.on();
+    //       if (logging.getLightLogs() == true)
+    //       {
+    //         logging.setTimestamp(getTimeBlynk());
+    //         logging.setMode(mode == 0 ? 'A' : 'M');
+    //         logging.setType('L');
+    //         logging.println("Red light 2 turned on");
+    //       }
+    //     }
+    //     // Интервалы между всеми остальными
+    //     if ((0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ||
+    //         (getMainLightTime("start", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) - redLightDuration_2 * 60) ||
+    //         (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < 86400))
+    //     {
+    //       light01_2.off();
+    //       if (logging.getLightLogs() == true)
+    //       {
+    //         logging.setTimestamp(getTimeBlynk());
+    //         logging.setMode(mode == 0 ? 'A' : 'M');
+    //         logging.setType('L');
+    //         logging.println("Red light 2 turned off");
+    //       }
+    //     }
+    //   }
+    // }
   }
 }
 // valves

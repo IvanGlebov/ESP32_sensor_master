@@ -416,10 +416,16 @@ private:
   long aerTempTimeDown_1, aerTempTimeDown_2;   // Переменная t1 от которой будет одти отсчёт для каждого блока отдельно
   long timeNowBlynk;                           // Время в секундах с Blynk
   int timeNow = dayTime;                       // Время суток
+// Поменять пины на реальные
+#define leakpin_1 10
+#define leakpin_2 11
+#define leakpin_3 12
+  bool leak1, leak2, leak3; // Состояния для датчиков протечки
 
   borderValues borders[3];
 
 public:
+  autoModeStates autoStates;
   packetData sensors1, sensors2, sensors3;
   String airTempFlags, airHumFlags; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
   bool aerTopFlag_1 = false, aerTopFlag_2 = false;
@@ -708,6 +714,18 @@ public:
   // Функция обработки капельного полива
   void groundHumCheckDay();
   void groundHumCheckNight();
+
+  void leakCheck()
+  {
+    leak1 = digitalRead(leakpin_1);
+    leak2 = digitalRead(leakpin_2);
+    leak3 = digitalRead(leakpin_3);
+
+    if (getMode() == automatic)
+    {
+
+    }
+  }
 
   // Возвращает 1 если функция занята вентиляцией и 2 если увлежнением.
   // 0 возвращается только если функция ничего не сделала

@@ -2242,15 +2242,15 @@ BLYNK_WRITE(V11)
 // Вентиль верхней аэрации блока 2
 BLYNK_WRITE(V12)
 {
-  int a = param.asInt();
-  if (obj1.getMode() == manual)
-  {
-    valve1_2.setState((a == 0) ? true : false);
-    logging.setTimestamp(obj1.getTimeBlynk());
-    logging.setMode('M');
-    logging.setType('R');
-    logging.println("Valve1_2 turned " + String((a == 0) ? "on" : "off"));
-  }
+  // int a = param.asInt();
+  // if (obj1.getMode() == manual)
+  // {
+  //   valve1_2.setState((a == 0) ? true : false);
+  //   logging.setTimestamp(obj1.getTimeBlynk());
+  //   logging.setMode('M');
+  //   logging.setType('R');
+  //   logging.println("Valve1_2 turned " + String((a == 0) ? "on" : "off"));
+  // }
 }
 
 // Реле 4
@@ -2272,15 +2272,15 @@ BLYNK_WRITE(V13)
 // Вентиль нижней аэрации блока 2
 BLYNK_WRITE(V14)
 {
-  int a = param.asInt();
-  if (obj1.getMode() == manual)
-  {
-    valve2_2.setState((a == 0) ? true : false);
-    logging.setTimestamp(obj1.getTimeBlynk());
-    logging.setMode('M');
-    logging.setType('R');
-    logging.println("Valve2_2 turned " + String((a == 0) ? "on" : "off"));
-  }
+  // int a = param.asInt();
+  // if (obj1.getMode() == manual)
+  // {
+  //   valve2_2.setState((a == 0) ? true : false);
+  //   logging.setTimestamp(obj1.getTimeBlynk());
+  //   logging.setMode('M');
+  //   logging.setType('R');
+  //   logging.println("Valve2_2 turned " + String((a == 0) ? "on" : "off"));
+  // }
 }
 
 // Реле 6

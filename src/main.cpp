@@ -2853,6 +2853,68 @@ BLYNK_WRITE(V79)
   obj1.setSensorValue(a, LIGHT_LEVEL_2);
 }
 
+
+BLYNK_WRITE(V92)
+{
+  int a = param.asInt();
+  obj1.autoStates.valve_1 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V93)
+{
+  int a = param.asInt();
+  obj1.autoStates.valve_2 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V94)
+{
+  int a = param.asInt();
+  obj1.autoStates.pump_1 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V95)
+{
+  int a = param.asInt();
+  obj1.autoStates.drenage_pump = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V96)
+{
+  int a = param.asInt();
+  obj1.autoStates.mainLight_1 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V97)
+{
+  int a = param.asInt();
+  obj1.autoStates.redLight_1 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V98)
+{
+  int a = param.asInt();
+  obj1.autoStates.distrif_1 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V99)
+{
+  int a = param.asInt();
+  obj1.autoStates.heater_1 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V100)
+{
+  int a = param.asInt();
+  obj1.autoStates.mainLight_2 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V101)
+{
+  int a = param.asInt();
+  obj1.autoStates.redLight_2 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V102)
+{
+  int a = param.asInt();
+  obj1.autoStates.distrif_2 = (a == 1) ? true : false;
+}
+BLYNK_WRITE(V103)
+{
+  int a = param.asInt();
+  obj1.autoStates.heater_2 = (a == 1) ? true : false;
+}
+
 // Костыль для функции obj1.saveModesAmdAerToEEPROM()
 void flagTrue();
 void request();

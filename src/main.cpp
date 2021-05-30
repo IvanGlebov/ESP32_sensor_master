@@ -3124,7 +3124,7 @@ void setRelay(relay r1)
     // Serial.println("pcf_2_p7 is now " + String(!r1.returnState()));
     break;
   default:
-    Serial.println("Error no such relay. Requered number :" + String(r1.number));
+    Serial.println("Error no such relay. Requered number :" + String(r1.number) + " Used name: " + String(r1.name));
     break;
   }
   // Отправка значения об изменении состояния реле.

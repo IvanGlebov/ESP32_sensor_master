@@ -736,6 +736,19 @@ public:
     EEPROM.writeLong(53, getMainLightTime("start", 2));
     EEPROM.writeLong(57, getMainLightTime("end", 2));
 
+    EEPROM.write(61, autoStates.mainLight_1);
+    EEPROM.write(62, autoStates.mainLight_2);
+    EEPROM.write(63, autoStates.redLight_1);
+    EEPROM.write(64, autoStates.redLight_2);
+    EEPROM.write(65, autoStates.distrif_1);
+    EEPROM.write(66, autoStates.distrif_2);
+    EEPROM.write(67, autoStates.heater_1);
+    EEPROM.write(68, autoStates.heater_2);
+    EEPROM.write(69, autoStates.valve_1);
+    EEPROM.write(70, autoStates.valve_2);
+    EEPROM.write(71, autoStates.pump_1);
+    EEPROM.write(72, autoStates.drenage_pump);
+    
     EEPROM.commit();
     // Serial.println("Saving modes ...");
   }
@@ -986,39 +999,38 @@ void workObj::lightControl()
 
     // Обычный режим
     // Блок 1
-    bool z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1*60) ? true : false;
-    bool z2_1 = (getMainLightTime("start", 1) - redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
+    bool z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1 * 60) ? true : false;
+    bool z2_1 = (getMainLightTime("start", 1) - redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
     bool z3_1 = (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
-    bool z4_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1*60) ? true : false;
-    bool z5_1 = (getMainLightTime("end", 1) + redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
-    
+    bool z4_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1 * 60) ? true : false;
+    bool z5_1 = (getMainLightTime("end", 1) + redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
+
     // Блок 2
-    bool z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2*60) ? true : false;
-    bool z2_2 = (getMainLightTime("start", 2) - redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
+    bool z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2 * 60) ? true : false;
+    bool z2_2 = (getMainLightTime("start", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
     bool z3_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
-    bool z4_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) + redLightDuration_2*60) ? true : false;
-    bool z5_2 = (getMainLightTime("end", 2) + redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
+    bool z4_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) + redLightDuration_2 * 60) ? true : false;
+    bool z5_2 = (getMainLightTime("end", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
 
     // Если будет ночной режим, то надо поменять значения границ
     // Блок 1
     if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
     {
       z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
-      z2_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1*60) ? true : false;
-      z3_1 = (getMainLightTime("end", 1) + redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1*60) ? true : false;
-      z4_1 = (getMainLightTime("start", 1) - redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
+      z2_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1 * 60) ? true : false;
+      z3_1 = (getMainLightTime("end", 1) + redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1 * 60) ? true : false;
+      z4_1 = (getMainLightTime("start", 1) - redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
       z5_1 = (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
     }
     // Блок 2
     if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
     {
       z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2)) ? true : false;
-      z2_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_2*60) ? true : false;
-      z3_2 = (getMainLightTime("end", 2) + redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2*60) ? true : false;
-      z4_2 = (getMainLightTime("start", 2) - redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
+      z2_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_2 * 60) ? true : false;
+      z3_2 = (getMainLightTime("end", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2 * 60) ? true : false;
+      z4_2 = (getMainLightTime("start", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
       z5_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
     }
-
 
     if (getMainLightMode(1) == timed)
     {
@@ -1159,21 +1171,18 @@ void workObj::redLightControl()
 
     // Обычный режим
     // Блок 1
-    bool z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1*60) ? true : false;
-    bool z2_1 = (getMainLightTime("start", 1) - redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
+    bool z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1 * 60) ? true : false;
+    bool z2_1 = (getMainLightTime("start", 1) - redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
     bool z3_1 = (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
-    bool z4_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1*60) ? true : false;
-    bool z5_1 = (getMainLightTime("end", 1) + redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
-    
+    bool z4_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1 * 60) ? true : false;
+    bool z5_1 = (getMainLightTime("end", 1) + redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
+
     // Блок 2
-    bool z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2*60) ? true : false;
-    bool z2_2 = (getMainLightTime("start", 2) - redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
+    bool z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2 * 60) ? true : false;
+    bool z2_2 = (getMainLightTime("start", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
     bool z3_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
-    bool z4_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) + redLightDuration_2*60) ? true : false;
-    bool z5_2 = (getMainLightTime("end", 2) + redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
-
-    
-
+    bool z4_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) + redLightDuration_2 * 60) ? true : false;
+    bool z5_2 = (getMainLightTime("end", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
 
     // Если будет ночной режим, то надо поменять значения границ
     // Блок 1
@@ -1181,9 +1190,9 @@ void workObj::redLightControl()
     {
       logging.println("Night mode block 1");
       z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
-      z2_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1*60) ? true : false;
-      z3_1 = (getMainLightTime("end", 1) + redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1*60) ? true : false;
-      z4_1 = (getMainLightTime("start", 1) - redLightDuration_1*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
+      z2_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1 * 60) ? true : false;
+      z3_1 = (getMainLightTime("end", 1) + redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1 * 60) ? true : false;
+      z4_1 = (getMainLightTime("start", 1) - redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1)) ? true : false;
       z5_1 = (getMainLightTime("start", 1) < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
     }
     // Блок 2
@@ -1191,9 +1200,9 @@ void workObj::redLightControl()
     {
       logging.println("Night mode block 2");
       z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2)) ? true : false;
-      z2_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_2*60) ? true : false;
-      z3_2 = (getMainLightTime("end", 2) + redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2*60) ? true : false;
-      z4_2 = (getMainLightTime("start", 2) - redLightDuration_2*60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
+      z2_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_2 * 60) ? true : false;
+      z3_2 = (getMainLightTime("end", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2 * 60) ? true : false;
+      z4_2 = (getMainLightTime("start", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
       z5_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
     }
 
@@ -1441,64 +1450,64 @@ void workObj::aerationControl()
 
     // Блок 2 верхняя аэрации
     // Если сейчас не поливаем и время смены режима
-    if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == false))
-    {
-      aerTempTimeTop_2 = timeNowBlynk + n2_1;
-      valve1_2.on();
-      aerTopFlag_2 = true;
-      if (logging.getValvesLogs() == true)
-      {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Top valve 2 opened");
-      }
-      // Serial.println("aerTopOn");
-    }
-    if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == true))
-    {
-      aerTempTimeTop_2 = timeNowBlynk + m2_1 * 60;
-      valve1_2.off();
-      aerTopFlag_2 = false;
-      if (logging.getValvesLogs() == true)
-      {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Top valve 2 closed");
-      }
-      // Serial.println("aerTopOff");
-    }
+    // if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == false))
+    // {
+    //   aerTempTimeTop_2 = timeNowBlynk + n2_1;
+    //   valve1_2.on();
+    //   aerTopFlag_2 = true;
+    //   if (logging.getValvesLogs() == true)
+    //   {
+    //     logging.setTimestamp(getTimeBlynk());
+    //     logging.setMode(mode == 0 ? 'A' : 'M');
+    //     logging.setType('L');
+    //     logging.println("Top valve 2 opened");
+    //   }
+    //   // Serial.println("aerTopOn");
+    // }
+    // if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == true))
+    // {
+    //   aerTempTimeTop_2 = timeNowBlynk + m2_1 * 60;
+    //   valve1_2.off();
+    //   aerTopFlag_2 = false;
+    //   if (logging.getValvesLogs() == true)
+    //   {
+    //     logging.setTimestamp(getTimeBlynk());
+    //     logging.setMode(mode == 0 ? 'A' : 'M');
+    //     logging.setType('L');
+    //     logging.println("Top valve 2 closed");
+    //   }
+    //   // Serial.println("aerTopOff");
+    // }
 
     // Блок 2 нижняя аэрация
-    if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == false))
-    {
-      aerTempTimeDown_2 = timeNowBlynk + n2_2;
-      valve2_2.on();
-      aerDownFlag_2 = true;
-      if (logging.getValvesLogs() == true)
-      {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Bottom valve 2 opened");
-      }
-      // Serial.println("aerTopOn");
-    }
-    if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == true))
-    {
-      aerTempTimeDown_2 = timeNowBlynk + m2_2 * 60;
-      valve2_2.off();
-      aerDownFlag_2 = false;
-      if (logging.getValvesLogs() == true)
-      {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Bottom valve 2 closed");
-      }
-      // Serial.println("aerTopOff");
-    }
+    // if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == false))
+    // {
+    //   aerTempTimeDown_2 = timeNowBlynk + n2_2;
+    //   valve2_2.on();
+    //   aerDownFlag_2 = true;
+    //   if (logging.getValvesLogs() == true)
+    //   {
+    //     logging.setTimestamp(getTimeBlynk());
+    //     logging.setMode(mode == 0 ? 'A' : 'M');
+    //     logging.setType('L');
+    //     logging.println("Bottom valve 2 opened");
+    //   }
+    //   // Serial.println("aerTopOn");
+    // }
+    // if ((timeNowBlynk >= aerTempTimeDown_2) && (aerDownFlag_2 == true))
+    // {
+    //   aerTempTimeDown_2 = timeNowBlynk + m2_2 * 60;
+    //   valve2_2.off();
+    //   aerDownFlag_2 = false;
+    //   if (logging.getValvesLogs() == true)
+    //   {
+    //     logging.setTimestamp(getTimeBlynk());
+    //     logging.setMode(mode == 0 ? 'A' : 'M');
+    //     logging.setType('L');
+    //     logging.println("Bottom valve 2 closed");
+    //   }
+    //   // Serial.println("aerTopOff");
+    // }
   }
 }
 

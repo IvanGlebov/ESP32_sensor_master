@@ -1379,7 +1379,6 @@ void workObj::redLightControl()
         }
       }
     }
-  
   }
 }
 // valves
@@ -2434,10 +2433,19 @@ BLYNK_WRITE(V24)
 }
 
 // Реле 16
-// empty
+// Дренажна помпа
 BLYNK_WRITE(V25)
 {
-  // int a = param.asInt();
+  int a = param.asInt();
+  // Serial.println("R16 echo");
+  if (obj1.getMode() == manual)
+  {
+    drenage_pump.setState((a == 0) ? true : false);
+    logging.setTimestamp(obj1.getTimeBlynk());
+    logging.setMode('M');
+    logging.setType('R');
+    logging.println("Drenage pump is now: " + String((a == 0) ? "on" : "off"));
+  }
 }
 
 // 00000   000000  00000   00000   000000  00000   000000

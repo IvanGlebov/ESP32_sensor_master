@@ -395,9 +395,11 @@ relay heater1_1 = relay(2, "Hearet1Kv-1", 23); // Отопление 1
 relay heater1_2 = relay(3, "Heater1kv_2", 24); // Отопление 2
 // relay siod1_1 = relay(14, "SIOD1Kv");
 
+relay drenage_pump = relay(16, "Drenage-pump", 25); // Дренажная помпа для откачки воды тумана и аэропоники
 // Функция для применения значений реле
+
 void setRelay(relay r1);
-void callRelays();
+// void callRelays();
 
 class workObj
 {
@@ -671,20 +673,22 @@ public:
     // Relays are working in inverted mode - 0 is ON, 1 is OFF
     setRelay(pump04_1); // Помпа капельного полива. Общая на 2 блока
     setRelay(valve1_1); // Вентиль верхней аэрации блока 1
-    setRelay(valve1_2); // Вентиль верхней аэрации блока 2
+    // Отключены из-за изменений кода
+    // setRelay(valve1_2);  // Вентиль верхней аэрации блока 2
     setRelay(valve2_1); // Вентиль нижней аэрации блока 1
-    setRelay(valve2_2); // Вентиль нижней аэрации блока 2
-    // setRelay(light3_1);
-    setRelay(light1_1);    // Основное освещение в блоке 1
-    setRelay(light1_2);    // Основное освещение в блоке 2
-    setRelay(light01_1);   // Дальнее красное освещение в блоке 1
-    setRelay(light01_2);   // Дальнее красное освещение в блоке 2
-    setRelay(distrif1_1);  // Вентиляция в блоке 1
-    setRelay(distrif1_2);  // Вентиляция в блоке 2
-    setRelay(steamgen1_1); // Увлажнитель в блоке 1
-    setRelay(steamgen1_2); // Увлажнитель в блоке 2
-    setRelay(heater1_1);   // Отопрелние в блоке 1
-    setRelay(heater1_2);   // Отобление в блоке 2
+    // Отключено из-за изменений кода
+    // setRelay(valve2_2);  // Вентиль нижней аэрации блока 2
+    setRelay(light1_1);     // Основное освещение в блоке 1
+    setRelay(light1_2);     // Основное освещение в блоке 2
+    setRelay(light01_1);    // Дальнее красное освещение в блоке 1
+    setRelay(light01_2);    // Дальнее красное освещение в блоке 2
+    setRelay(distrif1_1);   // Вентиляция в блоке 1
+    setRelay(distrif1_2);   // Вентиляция в блоке 2
+    setRelay(steamgen1_1);  // Увлажнитель в блоке 1
+    setRelay(steamgen1_2);  // Увлажнитель в блоке 2
+    setRelay(heater1_1);    // Отопрелние в блоке 1
+    setRelay(heater1_2);    // Отобление в блоке 2
+    setRelay(drenage_pump); // Дренажная помпа на все блоки
   }
 
   // Функция для автоматической обработки автоматики отдельных блоков
@@ -1063,7 +1067,7 @@ void workObj::lightControl()
       }
       if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
       {
-        
+
         // if (getTimeBlynk() < getMainLightTime("start", 1) && getTimeBlynk() > getMainLightTime("end", 1))
         // logging.println("Exception");
 

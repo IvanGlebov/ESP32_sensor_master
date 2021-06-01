@@ -106,19 +106,20 @@ BlynkTimer requestSlave;
 WidgetTerminal terminal(V0);
 WidgetLCD lcd(V85);
 
-struct autoModeStates {
-  bool mainLight_1;   // V96  -> Основной свет 1
-  bool mainLight_2;   // V100 -> Основной свет 2
-  bool redLight_1;    // V97  -> Красный свет 1
-  bool redLight_2;    // V101 -> Красный свет 2
-  bool distrif_1;     // V98  -> Вентиляция 1
-  bool distrif_2;     // V102 -> Вентиляция 2
-  bool heater_1;      // V99  -> Подогрев 1
-  bool heater_2;      // V103 -> Подогрев 2
-  bool valve_1;       // V92  -> Туман
-  bool valve_2;       // V93  -> Аэропоника
-  bool pump_1;        // V94  -> Капельный полив
-  bool drenage_pump;  // V95  -> Дренажная помпа
+struct autoModeStates
+{
+  bool mainLight_1;  // V96  -> Основной свет 1
+  bool mainLight_2;  // V100 -> Основной свет 2
+  bool redLight_1;   // V97  -> Красный свет 1
+  bool redLight_2;   // V101 -> Красный свет 2
+  bool distrif_1;    // V98  -> Вентиляция 1
+  bool distrif_2;    // V102 -> Вентиляция 2
+  bool heater_1;     // V99  -> Подогрев 1
+  bool heater_2;     // V103 -> Подогрев 2
+  bool valve_1;      // V92  -> Туман
+  bool valve_2;      // V93  -> Аэропоника
+  bool pump_1;       // V94  -> Капельный полив
+  bool drenage_pump; // V95  -> Дренажная помпа
 };
 
 // Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
@@ -165,6 +166,8 @@ private:
   bool show_heater_logs = false;
   // V91
   bool show_sensors_logs = false;
+  // V
+  bool show_drenage_logs = true;
 
 public:
   logger(char workmode, char messagetype, bool sendtoterminal, bool showlogs) : workMode(workmode), messageType(messagetype), messageNumber(0), sendToTerminal(sendtoterminal), showLogs(showlogs){};
@@ -188,6 +191,7 @@ public:
   bool getSteamLogs() { return show_steam_logs; }
   bool getHeaterLogs() { return show_heater_logs; }
   bool getSensorsLogs() { return show_sensors_logs; }
+  bool getDrenageLogs() { return show_drenage_logs; }
 };
 
 void logger::println(String text)
@@ -404,6 +408,7 @@ void setRelay(relay r1);
 class workObj
 {
 private:
+  int drenage_pump_time;                       // Время следующей проверки логики для дренажной помпы
   int mode;                                    // Режим работы
   int redLightDuration_1, redLightDuration_2;  // Длительность досветки дальним красным
   int redLightMode_1, redLightMode_2;          // Режим работы красной досветки
@@ -416,15 +421,19 @@ private:
   long aerTempTimeDown_1, aerTempTimeDown_2;   // Переменная t1 от которой будет одти отсчёт для каждого блока отдельно
   long timeNowBlynk;                           // Время в секундах с Blynk
   int timeNow = dayTime;                       // Время суток
-// Поменять пины на реальные
-#define leakpin_1 10
-#define leakpin_2 11
-#define leakpin_3 12
+
+  // Поменять пины на реальные
+
   bool leak1, leak2, leak3; // Состояния для датчиков протечки
 
   borderValues borders[3];
 
 public:
+  int drenage_duration; // Длительность работы дренажной помпы
+  bool leak_test = false;
+  int leakpin_1 = 10;
+  int leakpin_2 = 11;
+  int leakpin_3 = 12;
   autoModeStates autoStates;
   packetData sensors1, sensors2, sensors3;
   String airTempFlags, airHumFlags; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
@@ -714,16 +723,62 @@ public:
   // Функция обработки капельного полива
   void groundHumCheckDay();
   void groundHumCheckNight();
-
+  // Функция сбора данных с датчиков протечки и управления дренажной помпой
   void leakCheck()
   {
-    leak1 = digitalRead(leakpin_1);
-    leak2 = digitalRead(leakpin_2);
-    leak3 = digitalRead(leakpin_3);
+    // Если на датчике будет зафиксирована протечка, то в Blynk на вирутальный пин будет отправлено значение 255.
+    // leak1 - V105
+    // leak2 - V106
+    // leak3 - V107
+
+    if (leak_test == true)
+    {
+      leak1 = false;
+      leak2 = false;
+      leak3 = false;
+    }
+    else
+    {
+      leak1 = digitalRead(leakpin_1);
+      leak2 = digitalRead(leakpin_2);
+      leak3 = digitalRead(leakpin_3);
+    }
+
+    // Отображение состояний протечки
+    Blynk.virtualWrite(V105, leak1 == true ? 255 : 0);
+    Blynk.virtualWrite(V106, leak2 == true ? 255 : 0);
+    Blynk.virtualWrite(V107, leak3 == true ? 255 : 0);
 
     if (getMode() == automatic)
     {
-
+      if (autoStates.drenage_pump == true)
+      {
+        // Если есть протечка, помпа выключена и следующее время включения(проверки) ещё не наступило.
+        if ((leak1 == true || leak2 == true || leak3 == true) && drenage_pump.returnState() == false && getTimeBlynk() > drenage_pump_time)
+        {
+          drenage_pump_time = getTimeBlynk() + drenage_duration;
+          drenage_pump.on();
+          if (logging.getDrenageLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Drenage pump turned on for " + String(drenage_duration));
+          }
+        }
+        // Если нет протечек и время работы насоса уже прошло
+        if ((leak1 == false && leak2 == false && leak3 == false) && getTimeBlynk() > drenage_pump_time)
+        {
+          drenage_pump.off();
+          if (logging.getDrenageLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Drenage pump turned off for");
+          }
+        }
+      }
     }
   }
 
@@ -770,7 +825,10 @@ public:
     EEPROM.write(70, autoStates.valve_2);
     EEPROM.write(71, autoStates.pump_1);
     EEPROM.write(72, autoStates.drenage_pump);
-    
+
+    EEPROM.writeInt(73, drenage_duration);
+    EEPROM.writeLong(77, drenage_pump_time);
+
     EEPROM.commit();
     // Serial.println("Saving modes ...");
   }

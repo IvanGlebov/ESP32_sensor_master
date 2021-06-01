@@ -3080,8 +3080,10 @@ void setup()
   // Но другого у меня нет. Так что будет пока так.
   // Хорошо бы сделать отдельное питание на 3.3 линию в 3.4В
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-
-  EEPROM.begin(70);     // Init 70 bytes of EEPROM
+  pinMode(obj1.leakpin_1, INPUT);
+  pinMode(obj1.leakpin_2, INPUT);
+  pinMode(obj1.leakpin_3, INPUT);
+  EEPROM.begin(100);    // Init 100 bytes of EEPROM
   Wire.begin(21, 22);   // Join I2C bus
   pcf_1.begin();        // Connect PCF8574_1 pin extension
   pcf_2.begin();        // Connect PCF8574_2 pin extension
@@ -3091,7 +3093,7 @@ void setup()
   obj1.restoreModesAndAerFromEEPROM();
   // Blynk.begin(auth, ssid, pass);
   eeprom.setInterval(1000L, flagTrue);
-  requestSlave.setInterval(5000L, request);
+  // requestSlave.setInterval(5000L, request);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
 
@@ -3117,10 +3119,10 @@ int strtTime = 2;
 
 void loop()
 {
-  bool showBorders = false;           // Отображение в консоли граничных значений
-  bool showRedLightModes = false;     // Отображение в консоли режимов красного света
-  bool onAuto = true;                 // Включение обработки автоматического режима
-  bool requests = false;              // Получение данных от slave
+  bool showBorders = false;       // Отображение в консоли граничных значений
+  bool showRedLightModes = false; // Отображение в консоли режимов красного света
+  bool onAuto = true;             // Включение обработки автоматического режима
+  // bool requests = false;              // Получение данных от slave
   bool showRedLightDurations = false; // Вывод в консоль длительностей красной досветки
   if (strtTime > 0)
   {
@@ -3129,10 +3131,10 @@ void loop()
     strtTime--;
   }
   eeprom.run();
-  if (requests == true)
-  {
-    requestSlave.run();
-  }
+  // if (requests == true)
+  // {
+  //   requestSlave.run();
+  // }
   if (firstConnectedFlag == true)
   {
     obj1.dropTempTimeToNow();
@@ -3196,6 +3198,7 @@ void loop()
       obj1.lightControl();
       obj1.redLightControl();
       obj1.aerationControl();
+      obj1.leakCheck();
     }
   }
   if (logging.getSensorsLogs() == true)

@@ -859,6 +859,22 @@ public:
     setMainLightTime("end", 1, EEPROM.readLong(49));
     setMainLightTime("start", 2, EEPROM.readLong(53));
     setMainLightTime("end", 2, EEPROM.readLong(57));
+
+    autoStates.mainLight_1 = EEPROM.read(61);
+    autoStates.mainLight_2 = EEPROM.read(62);
+    autoStates.redLight_1 = EEPROM.read(63);
+    autoStates.redLight_2 = EEPROM.read(64);
+    autoStates.distrif_1 = EEPROM.read(65);
+    autoStates.distrif_2 = EEPROM.read(66);
+    autoStates.heater_1 = EEPROM.read(67);
+    autoStates.heater_2 = EEPROM.read(68);
+    autoStates.valve_1 = EEPROM.read(69);
+    autoStates.valve_2 = EEPROM.read(70);
+    autoStates.pump_1 = EEPROM.read(71);
+    autoStates.drenage_pump = EEPROM.read(72);
+
+    drenage_duration = EEPROM.readInt(73);
+    drenage_pump_time = EEPROM.readLong(77);
   }
   // Функция для сохранения всех значений границ в энергонезависимую память
   void saveBordersToEEPROM(int bordersGroup, String border)
@@ -1112,129 +1128,134 @@ void workObj::lightControl()
       z5_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
     }
 
-    if (getMainLightMode(1) == timed)
+    if (autoStates.mainLight_1 == true)
     {
-      // Включение освещения по времени
-      if (getMainLightTime("start", 1) < getMainLightTime("end", 1))
+      if (getMainLightMode(1) == timed)
       {
-        if (z3_1)
+        // Включение освещения по времени
+        if (getMainLightTime("start", 1) < getMainLightTime("end", 1))
         {
-          if (logging.getLightLogs() == true)
+          if (z3_1)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 1 turned on");
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 1 turned on");
+            }
+            light1_1.on();
+            // Выключение освещения по времени
           }
-          light1_1.on();
-          // Выключение освещения по времени
+          else
+          {
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 1 turned off");
+            }
+            light1_1.off();
+          }
         }
-        else
+        if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
         {
-          if (logging.getLightLogs() == true)
+
+          // if (getTimeBlynk() < getMainLightTime("start", 1) && getTimeBlynk() > getMainLightTime("end", 1))
+          // logging.println("Exception");
+
+          if (z1_1 || z5_1)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 1 turned off");
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 1 turned on");
+            }
+            light1_1.on();
+            // Выключение освещения по времени
           }
-          light1_1.off();
+          else
+          {
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 1 turned off");
+            }
+            light1_1.off();
+          }
         }
+
+        // Выключение освещения по времени
+        // if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
+        //   logging.setTimestamp(getTimeBlynk());
+        //   logging.setMode(mode == 0 ? 'A' : 'M');
+        //   logging.setType('L');
+        //   logging.println("Light1_1 turned off");
+        //   light1_1. off();
+        // }
       }
-      if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
-      {
-
-        // if (getTimeBlynk() < getMainLightTime("start", 1) && getTimeBlynk() > getMainLightTime("end", 1))
-        // logging.println("Exception");
-
-        if (z1_1 || z5_1)
-        {
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 1 turned on");
-          }
-          light1_1.on();
-          // Выключение освещения по времени
-        }
-        else
-        {
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 1 turned off");
-          }
-          light1_1.off();
-        }
-      }
-
-      // Выключение освещения по времени
-      // if ((getTimeBlynk() > getMainLightTime("end", 1) - 1) && (getTimeBlynk() < getMainLightTime("end", 1) + 1)){
-      //   logging.setTimestamp(getTimeBlynk());
-      //   logging.setMode(mode == 0 ? 'A' : 'M');
-      //   logging.setType('L');
-      //   logging.println("Light1_1 turned off");
-      //   light1_1. off();
-      // }
-    }
-    // Режим 1 блока 2
-    if (getMainLightMode(2) == timed)
+    } // Режим 1 блока 2
+    if (autoStates.mainLight_2 == true)
     {
-      // Включение освещения по времени
-      if (getMainLightTime("start", 2) < getMainLightTime("end", 2))
+      if (getMainLightMode(2) == timed)
       {
-        if (z3_2)
+        // Включение освещения по времени
+        if (getMainLightTime("start", 2) < getMainLightTime("end", 2))
         {
-          if (logging.getLightLogs() == true)
+          if (z3_2)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 2 turned on");
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 2 turned on");
+            }
+            light1_2.on();
+            // Выключение освещения по времени
           }
-          light1_2.on();
-          // Выключение освещения по времени
+          else
+          {
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 2 turned off");
+            }
+            light1_2.off();
+          }
         }
-        else
+        if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
         {
-          if (logging.getLightLogs() == true)
+          if (z1_2 || z5_2)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 2 turned off");
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 2 turned on");
+            }
+            light1_2.on();
+            // Выключение освещения по времени
           }
-          light1_2.off();
-        }
-      }
-      if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
-      {
-        if (z1_2 || z5_2)
-        {
-          if (logging.getLightLogs() == true)
+          else
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 2 turned on");
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Main lamp 2 turned off");
+            }
+            light1_2.off();
           }
-          light1_2.on();
-          // Выключение освещения по времени
-        }
-        else
-        {
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Main lamp 2 turned off");
-          }
-          light1_2.off();
         }
       }
     }
@@ -1268,7 +1289,7 @@ void workObj::redLightControl()
     // Блок 1
     if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
     {
-      logging.println("Night mode block 1");
+      // logging.println("Night mode block 1");
       z1_1 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
       z2_1 = (getMainLightTime("end", 1) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_1 * 60) ? true : false;
       z3_1 = (getMainLightTime("end", 1) + redLightDuration_1 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 1) - redLightDuration_1 * 60) ? true : false;
@@ -1278,7 +1299,7 @@ void workObj::redLightControl()
     // Блок 2
     if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
     {
-      logging.println("Night mode block 2");
+      // logging.println("Night mode block 2");
       z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2)) ? true : false;
       z2_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1) + redLightDuration_2 * 60) ? true : false;
       z3_2 = (getMainLightTime("end", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2 * 60) ? true : false;
@@ -1293,168 +1314,174 @@ void workObj::redLightControl()
     // logging.println("Z5 :" + String(z5_1));
 
     // Режим 1 блока 1
-    if (redLightMode_1 == timed)
+    if (autoStates.redLight_1 == true)
     {
-      // Нормальный режим работы освещения
-      if (getMainLightTime("start", 1) < getMainLightTime("end", 1))
+      if (redLightMode_1 == timed)
       {
-        // Правая часть интервала при обычной работе, в которой свет включен
-        if (z4_1)
+        // Нормальный режим работы освещения
+        if (getMainLightTime("start", 1) < getMainLightTime("end", 1))
         {
-          light01_1.on();
-          if (logging.getLightLogs() == true)
+          // Правая часть интервала при обычной работе, в которой свет включен
+          if (z4_1)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 1 turned on");
+            light01_1.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 1 turned on");
+            }
+          }
+          // Левая часть интервала при обычной работе, в которой свет включён
+          if (z2_1)
+          {
+            light01_1.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 1 turned on");
+            }
+          }
+          // Центральный интервал, в котором свет выключен
+          if (z1_1 || z3_1 || z5_1)
+          {
+            light01_1.off();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 1 turned off");
+            }
           }
         }
-        // Левая часть интервала при обычной работе, в которой свет включён
-        if (z2_1)
+        // Ночной режим работы
+        if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
         {
-          light01_1.on();
-          if (logging.getLightLogs() == true)
+          // Интервал после отключения основного освещения
+          if (z2_1)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 1 turned on");
+            light01_1.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 1 turned on");
+            }
           }
-        }
-        // Центральный интервал, в котором свет выключен
-        if (z1_1 || z3_1 || z5_1)
-        {
-          light01_1.off();
-          if (logging.getLightLogs() == true)
+          // Интервал перед включением основного освещения
+          if (z4_1)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 1 turned off");
+            light01_1.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 1 turned on");
+            }
           }
-        }
-      }
-      // Ночной режим работы
-      if (getMainLightTime("start", 1) > getMainLightTime("end", 1))
-      {
-        // Интервал после отключения основного освещения
-        if (z2_1)
-        {
-          light01_1.on();
-          if (logging.getLightLogs() == true)
+          if (z1_1 || z3_1 || z5_1)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 1 turned on");
-          }
-        }
-        // Интервал перед включением основного освещения
-        if (z4_1)
-        {
-          light01_1.on();
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 1 turned on");
-          }
-        }
-        if (z1_1 || z3_1 || z5_1)
-        {
-          light01_1.off();
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 1 turned off");
+            light01_1.off();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 1 turned off");
+            }
           }
         }
       }
     }
     // Режим 1 блока 2
-    if (redLightMode_2 == timed)
+    if (autoStates.redLight_2 == true)
     {
-      // Нормальный режим
-      if (getMainLightTime("start", 2) < getMainLightTime("end", 2))
+      if (redLightMode_2 == timed)
       {
-        // Левая часть интервала при обычной работе, в которой свет включен
-        if (z2_2)
+        // Нормальный режим
+        if (getMainLightTime("start", 2) < getMainLightTime("end", 2))
         {
-          light01_2.on();
-          if (logging.getLightLogs() == true)
+          // Левая часть интервала при обычной работе, в которой свет включен
+          if (z2_2)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 2 turned on");
+            light01_2.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 2 turned on");
+            }
+          }
+          // Правая часть интервала при обычной работе, в которой свет включён
+          if (z4_2)
+          {
+            light01_2.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 2 turned on");
+            }
+          }
+          // Центральный интервал и интервалы до и после засветок
+          if (z1_2 || z3_2 || z5_2)
+          {
+            light01_2.off();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 2 turned off");
+            }
           }
         }
-        // Правая часть интервала при обычной работе, в которой свет включён
-        if (z4_2)
+        // Ночной режим
+        if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
         {
-          light01_2.on();
-          if (logging.getLightLogs() == true)
+          // Интервал после отключения основного освещения (Начало дня)
+          if (z2_2)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 2 turned on");
+            light01_2.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 2 turned on");
+            }
           }
-        }
-        // Центральный интервал и интервалы до и после засветок
-        if (z1_2 || z3_2 || z5_2)
-        {
-          light01_2.off();
-          if (logging.getLightLogs() == true)
+          // Интервал перед включением основного освещения (Вечер)
+          if (z4_2)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 2 turned off");
+            light01_2.on();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 2 turned on");
+            }
           }
-        }
-      }
-      // Ночной режим
-      if (getMainLightTime("start", 2) > getMainLightTime("end", 2))
-      {
-        // Интервал после отключения основного освещения (Начало дня)
-        if (z2_2)
-        {
-          light01_2.on();
-          if (logging.getLightLogs() == true)
+          // зоны z1, z3 и z5
+          if (z1_2 || z3_2 || z5_2)
           {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 2 turned on");
-          }
-        }
-        // Интервал перед включением основного освещения (Вечер)
-        if (z4_2)
-        {
-          light01_2.on();
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 2 turned on");
-          }
-        }
-        // зоны z1, z3 и z5
-        if (z1_2 || z3_2 || z5_2)
-        {
-          light01_2.off();
-          if (logging.getLightLogs() == true)
-          {
-            logging.setTimestamp(getTimeBlynk());
-            logging.setMode(mode == 0 ? 'A' : 'M');
-            logging.setType('L');
-            logging.println("Red light 2 turned off");
+            light01_2.off();
+            if (logging.getLightLogs() == true)
+            {
+              logging.setTimestamp(getTimeBlynk());
+              logging.setMode(mode == 0 ? 'A' : 'M');
+              logging.setType('L');
+              logging.println("Red light 2 turned off");
+            }
           }
         }
       }
@@ -1466,67 +1493,71 @@ void workObj::aerationControl()
 {
   if (getMode() == automatic)
   {
-    // Блок 1 верхняя аэрации
-    // Если сейчас не поливаем и время смены режима
-    if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == false))
+    // Блок 1 туман
+    if (autoStates.valve_1 == true)
     {
-      aerTempTimeTop_1 = timeNowBlynk + n1_1;
-      valve1_1.on();
-      aerTopFlag_1 = true;
-      if (logging.getValvesLogs() == true)
+      // Если сейчас не поливаем и время смены режима
+      if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == false))
       {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Top valve 1 opened");
+        aerTempTimeTop_1 = timeNowBlynk + n1_1;
+        valve1_1.on();
+        aerTopFlag_1 = true;
+        if (logging.getValvesLogs() == true)
+        {
+          logging.setTimestamp(getTimeBlynk());
+          logging.setMode(mode == 0 ? 'A' : 'M');
+          logging.setType('L');
+          logging.println("Top valve 1 opened");
+        }
+        // Serial.println("aerTopOn");
       }
-      // Serial.println("aerTopOn");
+      if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true))
+      {
+        aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
+        valve1_1.off();
+        aerTopFlag_1 = false;
+        if (logging.getValvesLogs() == true)
+        {
+          logging.setTimestamp(getTimeBlynk());
+          logging.setMode(mode == 0 ? 'A' : 'M');
+          logging.setType('L');
+          logging.println("Top valve 1 closed");
+        }
+        // Serial.println("aerTopOff");
+      }
     }
-    if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true))
+    // Блок 1 аэропоника
+    if (autoStates.valve_2 == true)
     {
-      aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
-      valve1_1.off();
-      aerTopFlag_1 = false;
-      if (logging.getValvesLogs() == true)
+      if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == false))
       {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Top valve 1 closed");
+        aerTempTimeDown_1 = timeNowBlynk + n1_2;
+        valve2_1.on();
+        aerDownFlag_1 = true;
+        if (logging.getValvesLogs() == true)
+        {
+          logging.setTimestamp(getTimeBlynk());
+          logging.setMode(mode == 0 ? 'A' : 'M');
+          logging.setType('L');
+          logging.println("Bottom valve 1 opened");
+        }
+        // Serial.println("aerDownOn");
       }
-      // Serial.println("aerTopOff");
-    }
-
-    // Блок 1 нижняя аэрация
-    if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == false))
-    {
-      aerTempTimeDown_1 = timeNowBlynk + n1_2;
-      valve2_1.on();
-      aerDownFlag_1 = true;
-      if (logging.getValvesLogs() == true)
+      if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == true))
       {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Bottom valve 1 opened");
+        aerTempTimeDown_1 = timeNowBlynk + m1_2 * 60;
+        valve2_1.off();
+        aerDownFlag_1 = false;
+        if (logging.getValvesLogs() == true)
+        {
+          logging.setTimestamp(getTimeBlynk());
+          logging.setMode(mode == 0 ? 'A' : 'M');
+          logging.setType('L');
+          logging.println("Bottom valve 1 closed");
+        }
+        // Serial.println("aerDownOff");
       }
-      // Serial.println("aerDownOn");
     }
-    if ((timeNowBlynk >= aerTempTimeDown_1) && (aerDownFlag_1 == true))
-    {
-      aerTempTimeDown_1 = timeNowBlynk + m1_2 * 60;
-      valve2_1.off();
-      aerDownFlag_1 = false;
-      if (logging.getValvesLogs() == true)
-      {
-        logging.setTimestamp(getTimeBlynk());
-        logging.setMode(mode == 0 ? 'A' : 'M');
-        logging.setType('L');
-        logging.println("Bottom valve 1 closed");
-      }
-      // Serial.println("aerDownOff");
-    }
-
     // Блок 2 верхняя аэрации
     // Если сейчас не поливаем и время смены режима
     // if ((timeNowBlynk >= aerTempTimeTop_2) && (aerTopFlag_2 == false))
@@ -2143,27 +2174,29 @@ String workObj::airTempChechNight()
 
 void workObj::groundHumCheckDay()
 {
-
-  if ((sensors1.groundHum < borders[1].groundHumDay) || (sensors2.groundHum < borders[2].groundHumDay))
+  if (autoStates.pump_1 == true)
   {
-    pump04_1.on();
-    if (logging.getPumpLogs() == true)
+    if ((sensors1.groundHum < borders[1].groundHumDay) || (sensors2.groundHum < borders[2].groundHumDay))
     {
-      logging.setTimestamp(getTimeBlynk());
-      logging.setMode(mode == 0 ? 'A' : 'M');
-      logging.setType('L');
-      logging.println("Pump 1 turned on");
+      pump04_1.on();
+      if (logging.getPumpLogs() == true)
+      {
+        logging.setTimestamp(getTimeBlynk());
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Pump 1 turned on");
+      }
     }
-  }
-  if ((sensors1.groundHum >= borders[1].groundHumDay) && (sensors2.groundHum >= borders[2].groundHumDay))
-  {
-    pump04_1.off();
-    if (logging.getPumpLogs() == true)
+    if ((sensors1.groundHum >= borders[1].groundHumDay) && (sensors2.groundHum >= borders[2].groundHumDay))
     {
-      logging.setTimestamp(getTimeBlynk());
-      logging.setMode(mode == 0 ? 'A' : 'M');
-      logging.setType('L');
-      logging.println("Pump 1 turned off");
+      pump04_1.off();
+      if (logging.getPumpLogs() == true)
+      {
+        logging.setTimestamp(getTimeBlynk());
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Pump 1 turned off");
+      }
     }
   }
 }
@@ -2941,69 +2974,102 @@ BLYNK_WRITE(V79)
   obj1.setSensorValue(a, LIGHT_LEVEL_2);
 }
 
-
+// valve 1 autoState
 BLYNK_WRITE(V92)
 {
   int a = param.asInt();
   obj1.autoStates.valve_1 = (a == 1) ? true : false;
 }
+// valve 2 autoState
 BLYNK_WRITE(V93)
 {
   int a = param.asInt();
   obj1.autoStates.valve_2 = (a == 1) ? true : false;
 }
+// main pump autoState
 BLYNK_WRITE(V94)
 {
   int a = param.asInt();
   obj1.autoStates.pump_1 = (a == 1) ? true : false;
 }
+// drenage pump autoState
 BLYNK_WRITE(V95)
 {
   int a = param.asInt();
   obj1.autoStates.drenage_pump = (a == 1) ? true : false;
 }
+// main light 1 autoState
 BLYNK_WRITE(V96)
 {
   int a = param.asInt();
   obj1.autoStates.mainLight_1 = (a == 1) ? true : false;
 }
+// red light 1 autoState
 BLYNK_WRITE(V97)
 {
   int a = param.asInt();
   obj1.autoStates.redLight_1 = (a == 1) ? true : false;
 }
+// distrif 1 autoState
 BLYNK_WRITE(V98)
 {
   int a = param.asInt();
   obj1.autoStates.distrif_1 = (a == 1) ? true : false;
 }
+// heater 1 autoState
 BLYNK_WRITE(V99)
 {
   int a = param.asInt();
   obj1.autoStates.heater_1 = (a == 1) ? true : false;
 }
+// main light 1 autoState
 BLYNK_WRITE(V100)
 {
   int a = param.asInt();
   obj1.autoStates.mainLight_2 = (a == 1) ? true : false;
 }
+// red light 2 autoState
 BLYNK_WRITE(V101)
 {
   int a = param.asInt();
   obj1.autoStates.redLight_2 = (a == 1) ? true : false;
 }
+// distrif 2 autoState
 BLYNK_WRITE(V102)
 {
   int a = param.asInt();
   obj1.autoStates.distrif_2 = (a == 1) ? true : false;
 }
+// heater 2 autoState
 BLYNK_WRITE(V103)
 {
   int a = param.asInt();
   obj1.autoStates.heater_2 = (a == 1) ? true : false;
 }
 
-// Костыль для функции obj1.saveModesAmdAerToEEPROM()
+// Указать, что протечки нет
+BLYNK_WRITE(V108)
+{
+  int a = param.asInt();
+  obj1.leak_test = a == 1 ? true : false;
+  logging.setTimestamp(obj1.getTimeBlynk());
+  logging.setMode('M');
+  logging.setType('S');
+  if (a == 1)
+  {
+    logging.println("Leaks are now removed logically");
+  } else {
+    logging.println("Leaks are noticeable now");
+  }
+}
+// Длительность работы дренажной помпы
+BLYNK_WRITE(V109)
+{
+  int a = param.asInt();
+  obj1.drenage_duration = a;
+}
+
+// Костыль для функции obj1.saveModesAndAerToEEPROM()
 void flagTrue();
 void request();
 void sentToBlynk();

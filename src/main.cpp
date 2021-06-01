@@ -1104,7 +1104,7 @@ void workObj::lightControl()
     // Блок 2
     bool z1_2 = (0 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2) - redLightDuration_2 * 60) ? true : false;
     bool z2_2 = (getMainLightTime("start", 2) - redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < getMainLightTime("start", 2)) ? true : false;
-    bool z3_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 1)) ? true : false;
+    bool z3_2 = (getMainLightTime("start", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2)) ? true : false;
     bool z4_2 = (getMainLightTime("end", 2) < getTimeBlynk() && getTimeBlynk() < getMainLightTime("end", 2) + redLightDuration_2 * 60) ? true : false;
     bool z5_2 = (getMainLightTime("end", 2) + redLightDuration_2 * 60 < getTimeBlynk() && getTimeBlynk() < 86400) ? true : false;
 

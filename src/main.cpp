@@ -168,7 +168,7 @@ private:
   bool show_heater_logs = false;
   // V91
   bool show_sensors_logs = false;
-  // V
+  // V112
   bool show_drenage_logs = true;
 
 public:
@@ -184,6 +184,7 @@ public:
   void setSteamShow(int state) { show_steam_logs = (state == 1) ? false : true; }
   void setHeaterShow(int state) { show_heater_logs = (state == 1) ? false : true; }
   void setSensorsShow(int state) { show_sensors_logs = (state == 1) ? false : true; }
+  void setDrenageShow(int state) { show_drenage_logs = (state == 1) ? false : true; }
 
   bool getLightLogs() { return show_light_logs; }
   bool getValvesLogs() { return show_valves_logs; }
@@ -401,7 +402,7 @@ relay heater1_1 = relay(2, "Hearet1Kv-1", 23); // Отопление 1
 relay heater1_2 = relay(3, "Heater1kv_2", 24); // Отопление 2
 // relay siod1_1 = relay(14, "SIOD1Kv");
 
-relay drenage_pump = relay(16, "Drenage-pump", 25); // Дренажная помпа для откачки воды тумана и аэропоники
+relay drenage_pump = relay(10, "Drenage-pump", 25); // Дренажная помпа для откачки воды тумана и аэропоники
 // Функция для применения значений реле
 
 void setRelay(relay r1);
@@ -433,9 +434,9 @@ private:
 public:
   int drenage_duration; // Длительность работы дренажной помпы
   bool leak_test = false;
-  int leakpin_1 = 10;
-  int leakpin_2 = 11;
-  int leakpin_3 = 12;
+  int leakpin_1 = 34; // Датчик с пластинкой на чёрном проводе. Датчик протечки.
+  int leakpin_2 = 32; // Датчик с двумя проводами на сером проводе. Датчик обратки 1
+  int leakpin_3 = 33; // Датчик обратки 2
   autoModeStates autoStates;
   packetData sensors1, sensors2, sensors3;
   String airTempFlags, airHumFlags; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
@@ -741,9 +742,9 @@ public:
     }
     else
     {
-      leak1 = digitalRead(leakpin_1);
-      leak2 = digitalRead(leakpin_2);
-      leak3 = digitalRead(leakpin_3);
+      leak1 = !digitalRead(leakpin_1);
+      leak2 = !digitalRead(leakpin_2);
+      leak3 = !digitalRead(leakpin_3);
     }
 
     // Отображение состояний протечки
@@ -753,10 +754,24 @@ public:
 
     if (getMode() == automatic)
     {
+      if (leak1 == true)
+      {
+        Blynk.notify("Обнаружена протечка!");
+        valve1_1.off();
+        valve2_1.off();
+        autoStates.valve_1 = false;
+        autoStates.valve_2 = false;
+
+        logging.setTimestamp(getTimeBlynk());
+        logging.setMode(mode == 0 ? 'A' : 'M');
+        logging.setType('L');
+        logging.println("Обнаружена протечка, весь полив отключен и автотический полив отключен");
+      }
       if (autoStates.drenage_pump == true)
       {
         // Если есть протечка, помпа выключена и следующее время включения(проверки) ещё не наступило.
-        if ((leak1 == true || leak2 == true || leak3 == true) && drenage_pump.returnState() == false && getTimeBlynk() > drenage_pump_time)
+        // if ((leak2 == true || leak3 == true) && drenage_pump.returnState() == false && getTimeBlynk() > drenage_pump_time)
+        if ((leak2 == true || leak3 == true) && drenage_pump.returnState() == false)
         {
           drenage_pump_time = getTimeBlynk() + drenage_duration;
           drenage_pump.on();
@@ -769,15 +784,16 @@ public:
           }
         }
         // Если нет протечек и время работы насоса уже прошло
-        if ((leak1 == false && leak2 == false && leak3 == false) && getTimeBlynk() > drenage_pump_time)
+        if ((leak2 == false && leak3 == false) && getTimeBlynk() > drenage_pump_time)
         {
           drenage_pump.off();
+          // drenage_pump_time = 0;
           if (logging.getDrenageLogs() == true)
           {
             logging.setTimestamp(getTimeBlynk());
             logging.setMode(mode == 0 ? 'A' : 'M');
             logging.setType('L');
-            logging.println("Drenage pump turned off for");
+            logging.println("Drenage pump turned off");
           }
         }
       }
@@ -2262,6 +2278,9 @@ WidgetRTC rtcBlynk;
 BLYNK_CONNECTED()
 {
   rtcBlynk.begin();
+  obj1.calculateTimeBlynk();
+  Blynk.syncAll();
+
   lcd.print(0, 0, "Strt: " + String(obj1.getTimeBlynk() / 3600) + ":" + String(obj1.getTimeBlynk() % 3600) + ":" + String(obj1.getTimeBlynk() % 60));
 }
 
@@ -2319,6 +2338,12 @@ BLYNK_WRITE(V91)
 {
   int a = param.asInt();
   logging.setSensorsShow(a);
+}
+// Drenage logs flag
+BLYNK_WRITE(V112)
+{
+  int a = param.asInt();
+  logging.setDrenageShow(a);
 }
 
 //  000000  000000  00        00    00   00   00000

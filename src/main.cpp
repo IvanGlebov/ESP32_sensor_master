@@ -3,6 +3,8 @@
 
 #define BLYNK_PRINT Serial
 
+#define watchDogPin 19
+
 #define AIR_TEMP_1 1
 #define AIR_HUM_1 2
 #define GROUND_TEMP_1 3
@@ -3141,6 +3143,14 @@ void flagTrue();
 void request();
 void sentToBlynk();
 
+BlynkTimer keepAlive;
+void sendAliveSignal(){
+
+  logging.println("sending keepalive");
+  digitalWrite(watchDogPin, HIGH);
+  delay(100);
+  digitalWrite(watchDogPin, LOW);
+}
 void setup()
 {
   // Очень плохое решение проблемы проседания питания при старте WiFi
@@ -3150,6 +3160,9 @@ void setup()
   pinMode(obj1.leakpin_1, INPUT);
   pinMode(obj1.leakpin_2, INPUT);
   pinMode(obj1.leakpin_3, INPUT);
+  // Пин для отправки сигнала keepAlive
+  pinMode(watchDogPin, OUTPUT);
+
   EEPROM.begin(100);    // Init 100 bytes of EEPROM
   Wire.begin(21, 22);   // Join I2C bus
   pcf_1.begin();        // Connect PCF8574_1 pin extension
@@ -3160,6 +3173,7 @@ void setup()
   obj1.restoreModesAndAerFromEEPROM();
   // Blynk.begin(auth, ssid, pass);
   eeprom.setInterval(1000L, flagTrue);
+  keepAlive.setInterval(1000L, sendAliveSignal);
   // requestSlave.setInterval(5000L, request);
   setSyncInterval(10 * 60); // Для виджета часов реального времени
   // 10.1.92.35
@@ -3198,6 +3212,7 @@ void loop()
     strtTime--;
   }
   eeprom.run();
+  keepAlive.run();
   // if (requests == true)
   // {
   //   requestSlave.run();

@@ -124,6 +124,8 @@ struct autoModeStates
   bool drenage_pump; // V95  -> Дренажная помпа
   bool steam_1;      // V110 -> Парогенертор 1
   bool steam_2;      // V111 -> Парогенератор 2
+  int valve1_1;      // V113 -> Режим тумана
+  int valve1_2;      // V114 -> Режим аэропоники (не используется)
 };
 
 // Класс для нормального логирования всего и вся в консоль и терминал блинка, который надо объявить заранее!
@@ -437,8 +439,8 @@ public:
   int drenage_duration; // Длительность работы дренажной помпы
   bool leak_test = false;
   int leakpin_1 = 34; // Датчик с пластинкой на чёрном проводе. Датчик протечки.
-  int leakpin_2 = 32; // Датчик с двумя проводами на сером проводе. Датчик обратки 1
-  int leakpin_3 = 33; // Датчик обратки 2
+  int leakpin_2 = 26; // Датчик с двумя проводами на сером проводе. Датчик обратки 1
+  int leakpin_3 = 36; // Датчик обратки 2
   autoModeStates autoStates;
   packetData sensors1, sensors2, sensors3;
   String airTempFlags, airHumFlags; // Флаги для хранения значений из вызванных функций airTempCheck() и airHumCheck()
@@ -759,15 +761,15 @@ public:
       if (leak1 == true)
       {
         Blynk.notify("Обнаружена протечка!");
-        valve1_1.off();
-        valve2_1.off();
-        autoStates.valve_1 = false;
-        autoStates.valve_2 = false;
+        // valve1_1.off();
+        // valve2_1.off();
+        // autoStates.valve_1 = false;
+        // autoStates.valve_2 = false;
 
         logging.setTimestamp(getTimeBlynk());
         logging.setMode(mode == 0 ? 'A' : 'M');
         logging.setType('L');
-        logging.println("Обнаружена протечка, весь полив отключен и автотический полив отключен");
+        logging.println("Обнаружена протечка, весь полив отключен и автотический полив продолжает работу");
       }
       if (autoStates.drenage_pump == true)
       {
@@ -1521,35 +1523,63 @@ void workObj::aerationControl()
     // Блок 1 туман
     if (autoStates.valve_1 == true)
     {
+      if (autoStates.valve1_1 == 1)
+      {
+        if ((sensors1.airHum < borders[1].lowAirHumDay/* || sensors2.airHum < borders[2].lowAirHumDay*/) && aerTopFlag_1 == false){
+          valve1_1.on();
+          aerTopFlag_1 = true;
+          if (logging.getValvesLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Top valve 1 opened by humidity");
+          }
+        }
+        if ((sensors1.airHum > borders[1].lowAirHumDay/* && sensors2.airHum > borders[2].lowAirHumDay*/) && aerTopFlag_1 == true){
+          valve1_1.off();
+          aerTopFlag_1 = false;
+          if (logging.getValvesLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Top valve 1 closed by humidity");
+          }
+        }
+      }
+      else
+      {
+        if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == false))
+        {
+          aerTempTimeTop_1 = timeNowBlynk + n1_1;
+          valve1_1.on();
+          aerTopFlag_1 = true;
+          if (logging.getValvesLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Top valve 1 opened by time");
+          }
+          // Serial.println("aerTopOn");
+        }
+        if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true))
+        {
+          aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
+          valve1_1.off();
+          aerTopFlag_1 = false;
+          if (logging.getValvesLogs() == true)
+          {
+            logging.setTimestamp(getTimeBlynk());
+            logging.setMode(mode == 0 ? 'A' : 'M');
+            logging.setType('L');
+            logging.println("Top valve 1 closed");
+          }
+          // Serial.println("aerTopOff");
+        }
+      }
       // Если сейчас не поливаем и время смены режима
-      if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == false))
-      {
-        aerTempTimeTop_1 = timeNowBlynk + n1_1;
-        valve1_1.on();
-        aerTopFlag_1 = true;
-        if (logging.getValvesLogs() == true)
-        {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Top valve 1 opened");
-        }
-        // Serial.println("aerTopOn");
-      }
-      if ((timeNowBlynk >= aerTempTimeTop_1) && (aerTopFlag_1 == true))
-      {
-        aerTempTimeTop_1 = timeNowBlynk + m1_1 * 60;
-        valve1_1.off();
-        aerTopFlag_1 = false;
-        if (logging.getValvesLogs() == true)
-        {
-          logging.setTimestamp(getTimeBlynk());
-          logging.setMode(mode == 0 ? 'A' : 'M');
-          logging.setType('L');
-          logging.println("Top valve 1 closed");
-        }
-        // Serial.println("aerTopOff");
-      }
     }
     // Блок 1 аэропоника
     if (autoStates.valve_2 == true)
@@ -3113,6 +3143,11 @@ BLYNK_WRITE(V111)
   int a = param.asInt();
   obj1.autoStates.steam_2 = (a == 1) ? true : false;
 }
+// режим работы тумана
+BLYNK_WRITE(V113){
+  int a = param.asInt();
+  obj1.autoStates.valve1_1 = a;
+}
 
 // Указать, что протечки нет
 BLYNK_WRITE(V108)
@@ -3144,7 +3179,8 @@ void request();
 void sentToBlynk();
 
 BlynkTimer keepAlive;
-void sendAliveSignal(){
+void sendAliveSignal()
+{
 
   logging.println("sending keepalive");
   digitalWrite(watchDogPin, HIGH);
